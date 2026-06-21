@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class OpenRouterService {
 
     private static final String OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-    private static final String OPENROUTER_MODEL = "meta-llama/llama-3.1-8b-instruct:free";
+    private static final String OPENROUTER_MODEL = "nousresearch/hermes-3-llama-3.1-405b:free";
 
     @Value("${openrouter.api.key}")
     private String apiKey;
@@ -110,7 +110,7 @@ public class OpenRouterService {
         body.put("messages", messages);
         body.put("max_tokens", 2048);
         body.put("temperature", 0.5);
-        int maxRetries = 2;
+        int maxRetries = 3;
         for (int attempt = 0; attempt < maxRetries; attempt++) {
             try {
                 String response = webClient.post()
