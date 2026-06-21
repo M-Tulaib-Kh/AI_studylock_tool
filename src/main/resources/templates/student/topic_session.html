@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Topic Study Session</title>
+<main>
+
+<div class="page-header">
+  <h1 class="page-title">⏱ Topic Study Session</h1>
+  <p class="page-subtitle">Set a timer, focus on a topic, track your progress</p>
+</div>
+
+<div class="grid-2" style="gap:1.5rem;align-items:start">
+
+  <!-- LEFT: Setup + Timer -->
+  <div>
+    <!-- Course & Topic Selection -->
+    <div class="card" id="setupCard">
+      <div class="card-header"><h3 class="card-title">📌 Setup Session</h3></div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:1rem">
+        <div class="form-group">
+          <label class="form-label">Select Course</label>
+          <select id="courseSelect" class="form-control searchable-select" onchange="loadTopics()">
+            <option value="">— Select a course —</option>
+            <option th:each="e : ${enrollments}"
+                    th:value="${e.id}"
+                    th:attr="data-course=${e.course.title}, data-meta=${e.course.subject + ' · Sem ' + e.course.semester}"
+                    th:text="${e.course.title}">Course</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Topic to Study</label>
+          <input type="text" id="topicInput" class="form-control" placeholder="e.g., Binary Search Trees, HTTP Protocols..." />
+          <div style="font-size:0.8rem;color:var(--text-muted);margin-top:4px">Type a topic name or pick from completed topics below</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Study Duration</label>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem">
+            <button class="duration-btn btn btn-outline" onclick="setDuration(25)" data-min="25">🍅 25m</button>
+            <button class="duration-btn btn btn-outline" onclick="setDuration(45)" data-min="45">45m</button>
+            <button class="duration-btn btn btn-outline active" onclick="setDuration(60)" data-min="60">1h</button>
+            <button class="duration-btn btn btn-outline" onclick="setDuration(90)" data-min="90">1.5h</button>
+            <button class="duration-btn btn btn-outline" onclick="setDuration(120)" data-min="120">2h</button>
+            <button class="duration-btn btn btn-outline" onclick="setCustom()" data-min="0">Custom</button>
+          </div>
+        </div>
+        <button id="startBtn" class="btn btn-primary" style="width:100%;padding:0.875rem;justify-content:center;font-size:1rem" onclick="startSession()">
+          <i class="ti ti-player-play"></i> Start Session
+        </button>
+      </div>
+    </div>
+
+    <!-- Timer (hidden initially) -->
+    <div class="card" id="timerCard" style="display:none">
+      <div class="card-body" style="text-align:center;padding:2rem">
+        <div style="font-size:0.85rem;color:var(--primary);font-weight:700;margin-bottom:1rem;display:flex;align-items:center;justify-content:center;gap:6px">
+          <span style="width:8px;height:8px;background:var(--primary);border-radius:50%;display:inline-block;animation:pulse 2s infinite"></span>
+          FOCUS MODE ACTIVE
+        </div>
+        <div id="currentCourseName" style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.25rem"></div>
+        <div id="currentTopicName" style="font-weight:700;font-size:1.1rem;margin-bottom:1.5rem;color:var(--text)"></div>
+
+        <!-- Circular Timer -->
+        <div style="position:relative;width:200px;height:200px;margin:0 auto 1.5rem">
+          <svg width="200" height="200" style="transform:rotate(-90deg)">
+            <circle cx="100" cy="100" r="88" fill="none" stroke="var(--border-light)" stroke-width="10"/>
+            <circle id="timerArc" cx="100" cy="100" r="88" fill="none" stroke="url(#tGrad)" stroke-width="10"
+                    stroke-linecap="round" stroke-dasharray="553" stroke-dashoffset="0"/>
+            <defs>
+              <linearGradient id="tGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:var(--primary)"/>
+                <stop offset="100%" style="stop-color:#3b82f6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <div id="timerDisplay" style="font-size:2.5rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text)">00:00</div>
+            <div style="font-size:0.78rem;color:var(--text-muted)">remaining</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1.5rem">
+          <div style="background:var(--bg);border-radius:10px;padding:0.75rem;text-align:center">
+            <div style="font-size:0.75rem;color:var(--text-muted)">Elapsed</div>
+            <div id="elapsedDisplay" style="font-weight:700;color:var(--text)">0m</div>
+          </div>
+          <div style="background:var(--bg);border-radius:10px;padding:0.75rem;text-align:center">
+            <div style="font-size:0.75rem;color:var(--text-muted)">Progress</div>
+            <div id="pctDisplay" style="font-weight:700;color:var(--primary)">0%</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0.75rem">
+          <button onclick="extendSession(15)" class="btn btn-outline" style="flex:1"><i class="ti ti-plus"></i> +15m</button>
+          <button onclick="endSessionPrompt()" class="btn" style="flex:1;background:rgba(239,68,68,0.08);color:#ef4444;border:1px solid rgba(239,68,68,0.25)">
+            <i class="ti ti-player-stop"></i> End
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Completed Topics for this course -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">✅ Completed Topics</h3>
+        <span id="completedCount" class="badge" style="background:var(--primary-light);color:var(--primary)">0 done</span>
+      </div>
+      <div id="topicsList" style="padding:1rem;min-height:200px">
+        <div style="text-align:center;color:var(--text-muted);padding:2rem">
+          Select a course to see completed topics
+        </div>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="card" style="margin-top:1.25rem;background:var(--primary-light);border:none">
+      <div class="card-body">
+        <strong style="color:var(--primary)">💡 How it works</strong>
+        <ul style="margin:0.75rem 0 0;padding-left:1.25rem;color:var(--text-muted);font-size:0.875rem;line-height:1.8">
+          <li>Select course and type the topic you'll study</li>
+          <li>Set a timer for your planned study time</li>
+          <li>When timer ends, choose: topic done ✅, extend ⏱, or next topic</li>
+          <li>Completed topics are tracked per course</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Session End Modal -->
+<div id="endModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:none;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border-light);border-radius:20px;padding:2rem;max-width:440px;width:90%;max-height:90vh;overflow-y:auto">
+    <h3 style="margin:0 0 0.5rem;color:var(--text)">⏱ Time's Up!</h3>
+    <p style="color:var(--text-muted);margin:0 0 1.25rem" id="sessionSummaryText">You've completed your study session.</p>
+    <div style="display:flex;flex-direction:column;gap:0.75rem">
+      <button onclick="markTopicDone()" class="btn btn-primary" style="justify-content:center;padding:0.875rem">
+        ✅ Topic Completed — Mark as Done
+      </button>
+      <button onclick="extendSession(15)" class="btn btn-outline" style="justify-content:center;padding:0.875rem">
+        ⏱ Extend by 15 more minutes
+      </button>
+      <button onclick="closeEndModal()" class="btn btn-outline" style="justify-content:center;padding:0.875rem">
+        🚀 Start Next Topic
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+.duration-btn.active { background:var(--primary);color:#fff;border-color:var(--primary); }
+.topic-item { display:flex;align-items:center;gap:0.75rem;padding:0.625rem 0;border-bottom:1px solid var(--border-light); }
+.topic-item:last-child { border-bottom:none; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+</style>
+
+<script th:inline="javascript">
+let totalSeconds = 60 * 60;
+let elapsed = 0;
+let timerInterval = null;
+let enrollmentId = null;
+let topicName = '';
+
+function setDuration(min) {
+  totalSeconds = min * 60;
+  document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+function setCustom() {
+  const min = parseInt(prompt('Enter minutes:', '30'));
+  if (min > 0) { totalSeconds = min * 60; }
+  document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
+}
+
+function startSession() {
+  const selEl = document.getElementById('courseSelect');
+  enrollmentId = selEl.value;
+  topicName = document.getElementById('topicInput').value.trim();
+  if (!enrollmentId) { alert('Please select a course.'); return; }
+  if (!topicName)     { alert('Please enter a topic name.'); return; }
+  
+  elapsed = 0;
+  document.getElementById('currentCourseName').textContent = selEl.options[selEl.selectedIndex].getAttribute('data-course');
+  document.getElementById('currentTopicName').textContent = '📌 ' + topicName;
+  document.getElementById('setupCard').style.display = 'none';
+  document.getElementById('timerCard').style.display = 'block';
+  
+  updateTimerDisplay();
+  timerInterval = setInterval(tick, 1000);
+}
+
+function tick() {
+  elapsed++;
+  const remaining = Math.max(0, totalSeconds - elapsed);
+  updateTimerDisplay();
+  if (remaining <= 0) {
+    clearInterval(timerInterval);
+    showEndModal();
+  }
+}
+
+function updateTimerDisplay() {
+  const remaining = Math.max(0, totalSeconds - elapsed);
+  const m = Math.floor(remaining / 60);
+  const s = remaining % 60;
+  document.getElementById('timerDisplay').textContent = pad(m) + ':' + pad(s);
+  document.getElementById('elapsedDisplay').textContent = Math.floor(elapsed/60) + 'm';
+  const pct = Math.min(100, Math.round((elapsed / totalSeconds) * 100));
+  document.getElementById('pctDisplay').textContent = pct + '%';
+  const circ = 553;
+  const offset = circ - (circ * elapsed / totalSeconds);
+  document.getElementById('timerArc').setAttribute('stroke-dashoffset', Math.max(0, offset));
+}
+
+function pad(n) { return n < 10 ? '0'+n : ''+n; }
+
+function extendSession(extraMin) {
+  totalSeconds += extraMin * 60;
+  closeEndModal();
+  if (!timerInterval) timerInterval = setInterval(tick, 1000);
+  updateTimerDisplay();
+}
+
+function showEndModal() {
+  document.getElementById('sessionSummaryText').textContent =
+    `Time's up! You studied "${topicName}" for ${Math.floor(elapsed/60)} minutes. What would you like to do?`;
+  document.getElementById('endModal').style.display = 'flex';
+}
+
+function endSessionPrompt() {
+  if (confirm('End session? You can mark topic as done or close.')) {
+    showEndModal();
+  }
+}
+
+function closeEndModal() {
+  document.getElementById('endModal').style.display = 'none';
+  // Reset for next topic
+  clearInterval(timerInterval);
+  timerInterval = null;
+  document.getElementById('setupCard').style.display = 'block';
+  document.getElementById('timerCard').style.display = 'none';
+  document.getElementById('topicInput').value = '';
+  elapsed = 0;
+}
+
+async function markTopicDone() {
+  try {
+    const csrf = document.querySelector('input[name="_csrf"]')?.value || '';
+    const res = await fetch('/student/topic-session/complete', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf},
+      body: JSON.stringify({ enrollmentId, topicName, timeSpentSeconds: elapsed })
+    });
+    const data = await res.json();
+    if (data.success) {
+      // Show success and refresh topics
+      loadTopics();
+      alert('✅ Topic "' + topicName + '" marked as complete!');
+    }
+  } catch(e) {
+    alert('Could not save. Please try again.');
+  }
+  closeEndModal();
+}
+
+async function loadTopics() {
+  const selEl = document.getElementById('courseSelect');
+  const eid = selEl.value;
+  if (!eid) return;
+  const list = document.getElementById('topicsList');
+  list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:1rem">Loading...</div>';
+  try {
+    const res = await fetch('/student/topic-session/topics/' + eid);
+    const topics = await res.json();
+    document.getElementById('completedCount').textContent = topics.length + ' done';
+    if (!topics.length) {
+      list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:1.5rem">No topics completed yet for this course. Start your first session!</div>';
+      return;
+    }
+    list.innerHTML = '<div style="padding:0.5rem 1rem">' +
+      topics.map(t => `<div class="topic-item">
+        <span style="font-size:1.2rem">✅</span>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:0.9rem">${escHtml(t.topicName)}</div>
+          <div style="font-size:0.78rem;color:var(--text-muted)">${Math.round(t.timeSpentSeconds/60)} min studied</div>
+        </div>
+        <span onclick="document.getElementById('topicInput').value='${escHtml(t.topicName)}'" style="cursor:pointer;font-size:0.78rem;color:var(--primary)">Revisit</span>
+      </div>`).join('') + '</div>';
+  } catch(e) {
+    list.innerHTML = '<div style="text-align:center;color:var(--text-muted)">Could not load topics.</div>';
+  }
+}
+
+function escHtml(s) { return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+</script>
+</main>
+</html>

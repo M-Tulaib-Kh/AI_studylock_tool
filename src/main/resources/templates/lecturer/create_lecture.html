@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Upload Lecture</title>
+<main>
+<div style="max-width:700px;margin:0 auto">
+  <a href="javascript:history.back()" class="btn btn-outline btn-sm" style="margin-bottom:1rem"><i class="ti ti-arrow-left"></i> Back</a>
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">🎬 Upload Lecture</h3></div>
+    <div class="card-body">
+      <form th:action="@{/lecturer/create/lecture}" method="post" enctype="multipart/form-data">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <div class="form-group">
+          <label class="form-label">Course</label>
+          <select name="courseId" class="form-control course-select" required>
+            <option value="">Select course...</option>
+            <option th:each="c : ${courses}" th:value="${c.id}" th:text="${c.title}"
+                    th:attr="data-meta=${c.subject + ' · Sem ' + c.semester + ' · ' + c.creditHours + ' credit hrs'}">Course</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Lecture Title</label>
+            <input type="text" name="title" class="form-control" placeholder="e.g. Introduction to Algorithms" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Subject</label>
+            <input type="text" name="subject" class="form-control" placeholder="e.g. Computer Science"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" rows="3" placeholder="Brief overview..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Lecture File (PDF / PPT / DOCX)</label>
+          <div class="upload-zone" onclick="document.getElementById('lectureFile').click()">
+            <div style="font-size:2.5rem;margin-bottom:0.5rem">📤</div>
+            <div style="font-weight:600">Click to choose file</div>
+            <div style="color:var(--text-muted);font-size:0.85rem">PDF, DOCX, PPTX — max 50MB</div>
+            <div id="chosenFile" style="display:none;color:var(--primary);font-weight:600;margin-top:0.5rem"></div>
+          </div>
+          <input type="file" id="lectureFile" name="file" accept=".pdf,.doc,.docx,.ppt,.pptx"
+                 style="display:none" onchange="showFile(this)"/>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+          <i class="ti ti-upload"></i> Upload Lecture
+        </button>
+      </form>
+    </div>
+  </div>
+  <!-- Create Course inline -->
+  <div class="card" style="margin-top:1.25rem">
+    <div class="card-header"><h3 class="card-title">➕ Create New Course</h3></div>
+    <div class="card-body">
+      <form th:action="@{/lecturer/course/create}" method="post" style="display:flex;gap:0.75rem;flex-wrap:wrap">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="text" name="title" class="form-control" placeholder="Course Title" required style="flex:1;min-width:150px"/>
+        <input type="text" name="subject" class="form-control" placeholder="Subject" style="flex:1;min-width:120px"/>
+        <input type="text" name="description" class="form-control" placeholder="Description" style="flex:2;min-width:200px"/>
+        <button type="submit" class="btn btn-primary">Create</button>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+function showFile(input){
+  if(input.files[0]){document.getElementById('chosenFile').textContent=input.files[0].name;document.getElementById('chosenFile').style.display='block';}
+}
+</script>
+</main>
+</html>

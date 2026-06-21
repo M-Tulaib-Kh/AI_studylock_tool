@@ -1,0 +1,144 @@
+@startuml StudyLock_UseCaseDiagram
+title StudyLock LMS — Use Case Diagram
+
+left to right direction
+skinparam actorStyle awesome
+skinparam usecaseBackgroundColor #EEF4FF
+skinparam usecaseBorderColor #2E75B6
+skinparam actorBackgroundColor #FFFFFF
+skinparam actorBorderColor #2E75B6
+skinparam packageBackgroundColor #F8FBFF
+skinparam packageBorderColor #AACCEE
+skinparam arrowColor #444444
+skinparam noteFontSize 9
+
+actor Student as S
+actor Lecturer as L
+actor Admin as A
+
+rectangle "StudyLock LMS" {
+
+  package "Authentication" {
+    usecase "Register / Login" as UC_Login
+    usecase "View Profile" as UC_Profile
+    usecase "Change Password" as UC_Password
+  }
+
+  package "Course Management" {
+    usecase "Browse All Courses" as UC_Browse
+    usecase "Enroll in Course\n(semester & credit check)" as UC_Enroll
+    usecase "Request Admin Approval\n(future sem / over credit cap)" as UC_Request
+    usecase "Unenroll from Course" as UC_Unenroll
+    usecase "Create / Edit Course" as UC_CreateCourse
+    usecase "Assign Lecturer to Course" as UC_AssignLec
+    usecase "Approve / Reject\nEnrollment Requests" as UC_Approve
+  }
+
+  package "Academic Content" {
+    usecase "Upload Lecture Material" as UC_UploadLec
+    usecase "View Lecture Materials" as UC_ViewLec
+    usecase "Create Assignment\n(manual or AI-generated)" as UC_CreateAssign
+    usecase "Submit Assignment" as UC_Submit
+    usecase "Grade Submissions" as UC_Grade
+    usecase "Create Quiz\n(manual or AI-generated)" as UC_CreateQuiz
+    usecase "Attempt Quiz" as UC_AttemptQuiz
+    usecase "View Quiz Results\n& AI Feedback" as UC_QuizResult
+  }
+
+  package "AI Features" {
+    usecase "AI Tutor Chat\n(ask questions)" as UC_AiTutor
+    usecase "Generate AI Quiz" as UC_AiQuiz
+    usecase "Generate Weekly\nStudy Plan" as UC_AiPlan
+    usecase "Summarize Lecture" as UC_AiSummarize
+  }
+
+  package "Study Sessions" {
+    usecase "Start Proctored\nStudy Session" as UC_StartSession
+    usecase "Track Topic Progress" as UC_TopicProgress
+    usecase "View Session History\n& Stats" as UC_SessionStats
+  }
+
+  package "Gamification" {
+    usecase "Earn Points / Badges" as UC_Points
+    usecase "View Streak & Leaderboard" as UC_Streak
+  }
+
+  package "Attendance" {
+    usecase "Mark Student Attendance" as UC_MarkAttendance
+    usecase "View Attendance Records" as UC_ViewAttendance
+  }
+
+  package "Grading & Reports" {
+    usecase "View Student Marks" as UC_ViewMarks
+    usecase "View My Academic Report" as UC_MyReport
+    usecase "Generate Student Report\n(Admin)" as UC_AdminReport
+  }
+
+  package "Administration" {
+    usecase "Manage Users\n(create/block/promote)" as UC_ManageUsers
+    usecase "Send Notifications\nto All / Role" as UC_SendNotif
+    usecase "View System Analytics\n& Reports" as UC_Analytics
+    usecase "View Login Activity\nLog" as UC_LoginLog
+  }
+
+  package "Notifications" {
+    usecase "View Notifications\n& Unread Count" as UC_ViewNotif
+  }
+}
+
+' ── Student use cases ──
+S --> UC_Login
+S --> UC_Profile
+S --> UC_Password
+S --> UC_Browse
+S --> UC_Enroll
+S --> UC_Request
+S --> UC_Unenroll
+S --> UC_ViewLec
+S --> UC_Submit
+S --> UC_AttemptQuiz
+S --> UC_QuizResult
+S --> UC_AiTutor
+S --> UC_AiPlan
+S --> UC_StartSession
+S --> UC_TopicProgress
+S --> UC_SessionStats
+S --> UC_Points
+S --> UC_Streak
+S --> UC_ViewAttendance
+S --> UC_MyReport
+S --> UC_ViewNotif
+
+' ── Lecturer use cases ──
+L --> UC_Login
+L --> UC_Profile
+L --> UC_UploadLec
+L --> UC_CreateAssign
+L --> UC_CreateQuiz
+L --> UC_AiQuiz
+L --> UC_AiSummarize
+L --> UC_AiTutor
+L --> UC_Grade
+L --> UC_MarkAttendance
+L --> UC_ViewMarks
+L --> UC_ViewNotif
+
+' ── Admin use cases ──
+A --> UC_Login
+A --> UC_Profile
+A --> UC_CreateCourse
+A --> UC_AssignLec
+A --> UC_Approve
+A --> UC_ManageUsers
+A --> UC_SendNotif
+A --> UC_Analytics
+A --> UC_AdminReport
+A --> UC_LoginLog
+A --> UC_ViewNotif
+
+' ── Include relationships ──
+UC_Enroll ..> UC_Request : <<extend>>\n(if blocked)
+UC_AiQuiz ..> UC_CreateQuiz : <<include>>
+UC_StartSession ..> UC_Points : <<include>>
+
+@enduml

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Reports</title>
+<main>
+
+<div class="page-header">
+  <h1 class="page-title">📊 Reports & Analytics</h1>
+  <p class="page-subtitle">Platform usage, student performance, and session statistics</p>
+</div>
+
+<!-- Quick Stats -->
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.5rem">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">👥</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${userStats != null ? userStats.total : 0}">0</div>
+      <div class="stat-label">Total Users</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#10b981,#059669)">🎓</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${userStats != null ? userStats.students : 0}">0</div>
+      <div class="stat-label">Students</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">⏱</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${sessionStats != null ? sessionStats.total : 0}">0</div>
+      <div class="stat-label">Total Sessions</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">✅</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${sessionStats != null ? sessionStats.completed : 0}">0</div>
+      <div class="stat-label">Completed Sessions</div>
+    </div>
+  </div>
+</div>
+
+<!-- Top Students + Student Reports -->
+<div class="grid-2" style="gap:1.5rem;align-items:start">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">🏆 Top Students</h3>
+      <a href="/admin/lecturer-overview" class="btn btn-sm btn-outline">Lecturer View</a>
+    </div>
+    <div style="padding:0">
+      <div th:if="${topStudents == null || topStudents.isEmpty()}" style="padding:2rem;text-align:center;color:var(--text-muted)">
+        No student data yet
+      </div>
+      <div th:each="s, si : ${topStudents}" style="display:flex;align-items:center;gap:0.875rem;padding:0.875rem 1.25rem;border-bottom:1px solid var(--border-light)">
+        <div style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem"
+             th:style="${si.index==0} ? 'background:#fbbf24;color:#92400e' : (${si.index==1} ? 'background:#9ca3af;color:#1f2937' : (${si.index==2} ? 'background:#d97706;color:#fff' : 'background:var(--surface-2);color:var(--text-muted)'))">
+          <span th:text="${si.index+1}">1</span>
+        </div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:0.875rem" th:text="${s.fullName}">Name</div>
+          <div style="font-size:0.75rem;color:var(--text-muted)" th:text="${s.email}">email</div>
+        </div>
+        <a th:href="@{'/admin/reports/student/' + ${s.id}}" class="btn btn-sm btn-outline">
+          <i class="ti ti-chart-bar"></i> Report
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Session Stats -->
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">📈 Session Stats</h3></div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:0.875rem">
+      <div th:if="${sessionStats != null}">
+        <div style="display:flex;justify-content:space-between;padding:0.75rem;background:var(--bg);border-radius:10px;margin-bottom:0.625rem">
+          <span>Total Sessions</span><strong th:text="${sessionStats.total}">0</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0.75rem;background:var(--bg);border-radius:10px;margin-bottom:0.625rem">
+          <span>✅ Completed</span><strong style="color:#10b981" th:text="${sessionStats.completed}">0</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0.75rem;background:var(--bg);border-radius:10px;margin-bottom:0.625rem">
+          <span>❌ Failed</span><strong style="color:#ef4444" th:text="${sessionStats.failed}">0</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0.75rem;background:var(--bg);border-radius:10px">
+          <span>⏱ Total Hours</span>
+          <strong th:text="${sessionStats.totalMinutes != null ? (sessionStats.totalMinutes / 60) + 'h ' + (sessionStats.totalMinutes % 60) + 'm' : '0h'}">0h</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Logins -->
+<div class="card" style="margin-top:1.5rem">
+  <div class="card-header"><h3 class="card-title">🔐 Recent Login Activity</h3></div>
+  <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="background:var(--bg)">
+          <th style="padding:0.75rem 1.25rem;text-align:left;font-size:0.78rem;color:var(--text-muted);border-bottom:1px solid var(--border-light)">USER</th>
+          <th style="padding:0.75rem 1.25rem;text-align:left;font-size:0.78rem;color:var(--text-muted);border-bottom:1px solid var(--border-light)">ROLE</th>
+          <th style="padding:0.75rem 1.25rem;text-align:left;font-size:0.78rem;color:var(--text-muted);border-bottom:1px solid var(--border-light)">TIME</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:if="${loginEvents == null || loginEvents.isEmpty()}">
+          <td colspan="3" style="padding:2rem;text-align:center;color:var(--text-muted)">No login events yet</td>
+        </tr>
+        <tr th:each="e : ${loginEvents}" style="border-bottom:1px solid var(--border-light)">
+          <td style="padding:0.875rem 1.25rem">
+            <div style="font-weight:600;font-size:0.875rem" th:text="${e.name}">Name</div>
+            <div style="font-size:0.75rem;color:var(--text-muted)" th:text="${e.email}">email</div>
+          </td>
+          <td style="padding:0.875rem 1.25rem">
+            <span class="badge"
+              th:style="${e.role.name()=='STUDENT'} ? 'background:rgba(16,185,129,0.1);color:#10b981' : (${e.role.name()=='LECTURER'} ? 'background:rgba(59,130,246,0.1);color:#3b82f6' : 'background:rgba(245,158,11,0.1);color:#f59e0b')"
+              th:text="${e.role}">ROLE</span>
+          </td>
+          <td style="padding:0.875rem 1.25rem;font-size:0.82rem;color:var(--text-muted)"
+              th:text="${#temporals.format(e.loggedInAt,'dd MMM yyyy HH:mm')}"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</main>
+</html>

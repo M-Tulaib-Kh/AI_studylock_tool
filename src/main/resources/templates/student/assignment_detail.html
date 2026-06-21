@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Assignment</title>
+<main>
+<div style="max-width:760px;margin:0 auto">
+  <a href="javascript:history.back()" class="btn btn-outline btn-sm" style="margin-bottom:1.25rem">
+    <i class="ti ti-arrow-left"></i> Back
+  </a>
+
+  <!-- Header -->
+  <div class="card" style="margin-bottom:1.5rem;background:var(--primary-gradient);border:none;color:#fff">
+    <div class="card-body">
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem">
+        <span style="background:rgba(255,255,255,0.2);padding:2px 12px;border-radius:20px;font-size:0.8rem;font-weight:600" th:text="${assignment.subject}"></span>
+        <span style="background:rgba(255,255,255,0.2);padding:2px 12px;border-radius:20px;font-size:0.8rem;font-weight:600" th:text="${assignment.totalMarks} + ' Marks'"></span>
+        <span th:if="${assignment.overdue}" style="background:rgba(239,68,68,0.35);padding:2px 12px;border-radius:20px;font-size:0.8rem;font-weight:600">⚠ Overdue</span>
+      </div>
+      <h2 style="font-size:1.5rem;font-weight:800;margin-bottom:0.5rem" th:text="${assignment.title}"></h2>
+      <div style="opacity:0.85;font-size:0.875rem">
+        <i class="ti ti-clock"></i>
+        <span th:text="${assignment.overdue} ? 'OVERDUE — was due ' + ${#temporals.format(assignment.deadline,'dd MMM yyyy')} : 'Due: ' + ${#temporals.format(assignment.deadline,'dd MMM yyyy HH:mm')}"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assignment reference file download (from lecturer) -->
+  <div class="card" th:if="${assignment.fileUrl != null and !assignment.fileUrl.isEmpty()}" style="margin-bottom:1.5rem">
+    <div class="card-body" style="display:flex;align-items:center;gap:1rem">
+      <div style="font-size:2rem">📎</div>
+      <div style="flex:1">
+        <div style="font-weight:700">Reference File from Lecturer</div>
+        <div style="color:var(--text-muted);font-size:0.85rem" th:text="${assignment.fileName ?: 'Assignment file'}"></div>
+      </div>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-sm btn-outline" onclick="toggleAssignPdf()"><i class="ti ti-eye"></i> View</button>
+        <a th:href="@{${assignment.fileUrl}}" th:attr="download=${assignment.fileName}" class="btn btn-sm btn-primary">
+          <i class="ti ti-download"></i> Download
+        </a>
+      </div>
+    </div>
+    <div id="assignPdfArea" style="display:none;padding:1rem;border-top:1px solid var(--border-light)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem">
+        <div style="display:flex;gap:0.5rem">
+          <button onclick="prevAssignPage()" class="btn btn-sm btn-outline">←</button>
+          <button onclick="nextAssignPage()" class="btn btn-sm btn-outline">→</button>
+        </div>
+        <span id="assignPageInfo" style="font-size:0.85rem;color:var(--text-muted)"></span>
+        <button onclick="toggleAssignPdf()" class="btn btn-sm btn-outline">Close</button>
+      </div>
+      <canvas id="assignPdfCanvas" style="width:100%;border-radius:10px;background:#1a1a2e"></canvas>
+    </div>
+  </div>
+
+  <!-- Description & Instructions -->
+  <div class="card" style="margin-bottom:1.5rem" th:if="${assignment.description != null or assignment.instructions != null}">
+    <div class="card-body">
+      <div th:if="${assignment.description != null and !assignment.description.isEmpty()}">
+        <h4 style="margin-bottom:0.5rem">📋 Description</h4>
+        <p style="color:var(--text-muted);line-height:1.7" th:text="${assignment.description}"></p>
+      </div>
+      <div th:if="${assignment.instructions != null and !assignment.instructions.isEmpty()}" style="margin-top:1rem">
+        <h4 style="margin-bottom:0.5rem">📌 Instructions</h4>
+        <p style="color:var(--text-muted);line-height:1.7" th:text="${assignment.instructions}"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Graded Result -->
+  <div class="card" th:if="${submission != null and submission.status.name()=='GRADED'}"
+       style="margin-bottom:1.5rem;border:2px solid #10b981">
+    <div class="card-body">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+        <span style="font-size:1.5rem">✅</span>
+        <div style="font-weight:700;font-size:1.1rem">Assignment Graded</div>
+      </div>
+      <div style="font-size:2.5rem;font-weight:800;color:var(--primary)">
+        <span th:text="${submission.marksObtained}">0</span>
+        <span style="color:var(--text-muted);font-size:1.25rem">/ <span th:text="${assignment.totalMarks}">100</span></span>
+      </div>
+      <div th:if="${submission.feedback}" style="margin-top:1rem;padding:1rem;background:var(--surface-2);border-radius:10px">
+        <div style="font-weight:600;margin-bottom:0.5rem">💬 Feedback</div>
+        <p style="color:var(--text-muted)" th:text="${submission.feedback}"></p>
+      </div>
+      <!-- Download your submitted file -->
+      <div th:if="${submission.fileUrl != null}" style="margin-top:1rem;display:flex;gap:0.5rem">
+        <button class="btn btn-sm btn-outline" onclick="toggleSubPdf()"><i class="ti ti-eye"></i> View My Submission</button>
+        <a th:href="@{${submission.fileUrl}}" th:attr="download=${submission.fileName}" class="btn btn-sm btn-outline">
+          <i class="ti ti-download"></i> Download My Submission
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submitted but not graded -->
+  <div class="card" th:if="${submission != null and submission.status.name()!='GRADED'}"
+       style="margin-bottom:1.5rem;border:2px solid var(--info)">
+    <div class="card-body">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+        <span style="font-size:1.5rem">📤</span>
+        <div>
+          <div style="font-weight:700">Submitted — Awaiting Grade</div>
+          <div style="color:var(--text-muted);font-size:0.875rem" th:text="'File: ' + ${submission.fileName}"></div>
+          <div style="color:var(--text-muted);font-size:0.875rem" th:text="'Submitted: ' + ${#temporals.format(submission.submittedAt,'dd MMM yyyy HH:mm')}"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-sm btn-outline" onclick="toggleSubPdf()"><i class="ti ti-eye"></i> View Submission</button>
+        <a th:href="@{${submission.fileUrl}}" th:attr="download=${submission.fileName}" class="btn btn-sm btn-outline">
+          <i class="ti ti-download"></i> Download Submission
+        </a>
+      </div>
+    </div>
+    <!-- Submission PDF viewer -->
+    <div id="subPdfArea" style="display:none;padding:1rem;border-top:1px solid var(--border-light)">
+      <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem">
+        <div style="display:flex;gap:0.5rem">
+          <button onclick="prevSubPage()" class="btn btn-sm btn-outline">←</button>
+          <button onclick="nextSubPage()" class="btn btn-sm btn-outline">→</button>
+        </div>
+        <span id="subPageInfo" style="font-size:0.85rem;color:var(--text-muted)"></span>
+        <button onclick="toggleSubPdf()" class="btn btn-sm btn-outline">Close</button>
+      </div>
+      <canvas id="subPdfCanvas" style="width:100%;border-radius:10px;background:#1a1a2e"></canvas>
+    </div>
+  </div>
+
+  <!-- Submit Form (only if not yet submitted) -->
+  <div class="card" th:if="${submission == null}">
+    <div class="card-header"><h3 class="card-title">📤 Submit Assignment</h3></div>
+    <div class="card-body">
+      <form th:action="@{'/student/assignment/' + ${assignment.id} + '/submit'}" method="post" enctype="multipart/form-data">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+          <div style="font-size:2.5rem;margin-bottom:0.5rem">📁</div>
+          <div style="font-weight:600;margin-bottom:0.25rem">Click to choose your solution file</div>
+          <div style="color:var(--text-muted);font-size:0.85rem">PDF, DOC, DOCX, ZIP supported (max 50MB)</div>
+          <div id="fileName" style="display:none;color:var(--primary);font-weight:600;margin-top:0.75rem"></div>
+        </div>
+        <input type="file" id="fileInput" name="file" accept=".pdf,.doc,.docx,.zip" style="display:none" onchange="showFile(this)" required/>
+        <button type="submit" class="btn btn-primary" style="margin-top:1rem;width:100%;justify-content:center">
+          <i class="ti ti-send"></i> Submit Assignment
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script th:inline="javascript">
+const assignFileUrl = /*[[${assignment.fileUrl}]]*/ '';
+const subFileUrl    = /*[[${submission != null ? submission.fileUrl : ''}]]*/ '';
+
+function showFile(input){
+  if(input.files[0]){
+    document.getElementById('fileName').textContent = input.files[0].name;
+    document.getElementById('fileName').style.display='block';
+    document.getElementById('uploadZone').style.borderColor='var(--primary)';
+  }
+}
+
+// ── Assignment PDF viewer
+let aDoc=null, aPage=1, aShowing=false;
+function toggleAssignPdf(){
+  aShowing=!aShowing;
+  document.getElementById('assignPdfArea').style.display=aShowing?'block':'none';
+  if(aShowing&&!aDoc&&assignFileUrl){
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfjsLib.getDocument(assignFileUrl).promise.then(p=>{aDoc=p;renderA(1);});
+  }
+}
+function renderA(n){aDoc.getPage(n).then(p=>{const c=document.getElementById('assignPdfCanvas'),vp=p.getViewport({scale:1.5});c.height=vp.height;c.width=vp.width;p.render({canvasContext:c.getContext('2d'),viewport:vp});document.getElementById('assignPageInfo').textContent='Page '+n+' of '+aDoc.numPages;});}
+function prevAssignPage(){if(aPage>1){aPage--;renderA(aPage);}}
+function nextAssignPage(){if(aDoc&&aPage<aDoc.numPages){aPage++;renderA(aPage);}}
+
+// ── Submission PDF viewer
+let sDoc=null, sPage=1, sShowing=false;
+function toggleSubPdf(){
+  sShowing=!sShowing;
+  document.getElementById('subPdfArea').style.display=sShowing?'block':'none';
+  if(sShowing&&!sDoc&&subFileUrl){
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfjsLib.getDocument(subFileUrl).promise.then(p=>{sDoc=p;renderS(1);});
+  }
+}
+function renderS(n){sDoc.getPage(n).then(p=>{const c=document.getElementById('subPdfCanvas'),vp=p.getViewport({scale:1.5});c.height=vp.height;c.width=vp.width;p.render({canvasContext:c.getContext('2d'),viewport:vp});document.getElementById('subPageInfo').textContent='Page '+n+' of '+sDoc.numPages;});}
+function prevSubPage(){if(sPage>1){sPage--;renderS(sPage);}}
+function nextSubPage(){if(sDoc&&sPage<sDoc.numPages){sPage++;renderS(sPage);}}
+</script>
+</main>
+</html>

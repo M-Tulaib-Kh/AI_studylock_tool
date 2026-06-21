@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<th:block th:fragment="layout(title, content)">
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  <title th:replace="${title}">StudyLock</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/tabler-icons.min.css" rel="stylesheet"/>
+</head>
+<body>
+
+<div class="app-wrapper">
+
+  <!-- ═══════════ ADMIN SIDEBAR ═══════════ -->
+  <aside class="sidebar" sec:authorize="hasRole('ADMIN')">
+    <div class="sidebar-brand">🔒 <span>StudyLock</span></div>
+    <nav class="sidebar-nav">
+      <a th:href="@{/admin/dashboard}" class="nav-item" th:classappend="${activePage=='admin-dashboard'}?'active':''"><i class="ti ti-dashboard"></i><span>Dashboard</span></a>
+      <a th:href="@{/admin/users}" class="nav-item" th:classappend="${activePage=='admin-users'}?'active':''"><i class="ti ti-users"></i><span>Users</span></a>
+      <a th:href="@{/admin/courses}" class="nav-item" th:classappend="${activePage=='admin-courses'}?'active':''"><i class="ti ti-book"></i><span>Courses</span></a>
+      <a th:href="@{/admin/lecturer-overview}" class="nav-item" th:classappend="${activePage=='admin-lecturers'}?'active':''"><i class="ti ti-chalkboard"></i><span>Lecturers</span></a>
+      <a th:href="@{/admin/enrollment-requests}" class="nav-item" th:classappend="${activePage=='admin-enrollment-requests'}?'active':''">
+        <i class="ti ti-clipboard-check"></i><span>Enrollment Requests</span>
+        <span th:if="${pendingRequestCount != null and pendingRequestCount > 0}" th:text="${pendingRequestCount}"
+              style="margin-left:auto;background:#ef4444;color:#fff;font-size:0.7rem;font-weight:700;border-radius:10px;padding:1px 7px;min-width:18px;text-align:center"></span>
+      </a>
+      <a th:href="@{/admin/reports}" class="nav-item" th:classappend="${activePage=='admin-reports'}?'active':''"><i class="ti ti-chart-bar"></i><span>Reports</span></a>
+      <a th:href="@{/admin/notifications}" class="nav-item" th:classappend="${activePage=='admin-notifications'}?'active':''"><i class="ti ti-bell"></i><span>Notifications</span></a>
+      <a th:href="@{/admin/settings}" class="nav-item" th:classappend="${activePage=='admin-settings'}?'active':''"><i class="ti ti-settings"></i><span>Settings</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <form method="post" th:action="@{/auth/logout}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button class="nav-item logout-btn"><i class="ti ti-logout"></i><span>Logout</span></button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- ═══════════ LECTURER SIDEBAR ═══════════ -->
+  <aside class="sidebar" sec:authorize="hasRole('LECTURER')">
+    <div class="sidebar-brand">🔒 <span>StudyLock</span></div>
+    <nav class="sidebar-nav">
+      <a th:href="@{/lecturer/home}" class="nav-item" th:classappend="${activePage=='lecturer-home'}?'active':''"><i class="ti ti-home"></i><span>Dashboard</span></a>
+      <a th:href="@{/lecturer/manage}" class="nav-item" th:classappend="${activePage=='lecturer-manage'}?'active':''"><i class="ti ti-folder"></i><span>Manage</span></a>
+      <a th:href="@{/lecturer/create/lecture}" class="nav-item" th:classappend="${activePage=='lecturer-lecture'}?'active':''"><i class="ti ti-upload"></i><span>Add Lecture</span></a>
+      <a th:href="@{/lecturer/create/assignment}" class="nav-item" th:classappend="${activePage=='lecturer-assignment'}?'active':''"><i class="ti ti-clipboard"></i><span>Add Assignment</span></a>
+      <a th:href="@{/lecturer/create/quiz}" class="nav-item" th:classappend="${activePage=='lecturer-quiz'}?'active':''"><i class="ti ti-help-circle"></i><span>Add Quiz</span></a>
+      <a th:href="@{/lecturer/attendance}" class="nav-item" th:classappend="${activePage=='lecturer-attendance'}?'active':''"><i class="ti ti-calendar-check"></i><span>Attendance</span></a>
+      <a th:href="@{/lecturer/student-marks}" class="nav-item" th:classappend="${activePage=='lecturer-marks'}?'active':''"><i class="ti ti-chart-dots"></i><span>Student Marks</span></a>
+      <a th:href="@{/lecturer/ai-tutor}" class="nav-item" th:classappend="${activePage=='lecturer-tutor'}?'active':''"><i class="ti ti-robot"></i><span>AI Tutor</span></a>
+      <a th:href="@{/lecturer/profile}" class="nav-item" th:classappend="${activePage=='lecturer-profile'}?'active':''"><i class="ti ti-user"></i><span>Profile</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <form method="post" th:action="@{/auth/logout}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button class="nav-item logout-btn"><i class="ti ti-logout"></i><span>Logout</span></button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- ═══════════ STUDENT SIDEBAR ═══════════ -->
+  <aside class="sidebar" sec:authorize="hasRole('STUDENT')">
+    <div class="sidebar-brand">🔒 <span>StudyLock</span></div>
+    <nav class="sidebar-nav">
+      <a th:href="@{/student/home}" class="nav-item" th:classappend="${activePage=='student-home'}?'active':''"><i class="ti ti-home"></i><span>Home</span></a>
+      <a th:href="@{/student/enrollments}" class="nav-item" th:classappend="${activePage=='student-enrollments'}?'active':''"><i class="ti ti-books"></i><span>My Courses</span></a>
+      <a th:href="@{/student/academic}" class="nav-item" th:classappend="${activePage=='student-academic'}?'active':''"><i class="ti ti-school"></i><span>Academic</span></a>
+      <a th:href="@{/student/topic-session}" class="nav-item" th:classappend="${activePage=='student-topic'}?'active':''"><i class="ti ti-timer"></i><span>Topic Session</span></a>
+      <a th:href="@{/student/ai-tutor}" class="nav-item" th:classappend="${activePage=='student-tutor'}?'active':''"><i class="ti ti-robot"></i><span>AI Tutor</span></a>
+      <a th:href="@{/student/study-plan}" class="nav-item" th:classappend="${activePage=='student-plan'}?'active':''"><i class="ti ti-calendar"></i><span>Study Plan</span></a>
+      <a th:href="@{/student/leaderboard}" class="nav-item" th:classappend="${activePage=='student-leaderboard'}?'active':''"><i class="ti ti-trophy"></i><span>Leaderboard</span></a>
+      <a th:href="@{/student/attendance}" class="nav-item" th:classappend="${activePage=='student-attendance'}?'active':''"><i class="ti ti-calendar-check"></i><span>Attendance</span></a>
+      <a th:href="@{/student/rewards}" class="nav-item" th:classappend="${activePage=='student-rewards'}?'active':''"><i class="ti ti-star"></i><span>Rewards</span></a>
+      <a th:href="@{/student/notifications}" class="nav-item" th:classappend="${activePage=='student-notifications'}?'active':''"><i class="ti ti-bell"></i><span>Notifications</span></a>
+      <a th:href="@{/student/profile}" class="nav-item" th:classappend="${activePage=='student-profile'}?'active':''"><i class="ti ti-user"></i><span>Profile</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <form method="post" th:action="@{/auth/logout}">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <button class="nav-item logout-btn"><i class="ti ti-logout"></i><span>Logout</span></button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- ═══════════ MAIN AREA ═══════════ -->
+  <div class="main-area">
+    <header class="topbar">
+      <button class="sidebar-toggle" onclick="document.querySelector('.app-wrapper').classList.toggle('sidebar-collapsed')">
+        <i class="ti ti-menu-2"></i>
+      </button>
+      <div class="topbar-right">
+        <!-- Dark Mode Toggle -->
+        <button id="darkModeBtn" onclick="toggleDarkMode()" title="Toggle dark mode"
+                style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;font-size:1.2rem;color:var(--text-muted)">
+          <i class="ti ti-moon" id="darkIcon"></i>
+        </button>
+        <span class="topbar-user" th:if="${user != null}">
+          <span th:text="${user.fullName}"></span>
+          <span th:if="${user.role != null and user.role.name() == 'STUDENT' and user.semester != null}"
+                class="badge" style="margin-left:0.5rem;background:var(--primary-light);color:var(--primary);font-size:0.72rem"
+                th:text="'Sem ' + ${user.semester}"></span>
+        </span>
+        <div class="topbar-avatar" th:if="${user != null}">
+          <img th:if="${user.avatarUrl != null and !user.avatarUrl.isEmpty()}" th:src="${user.avatarUrl}"/>
+          <span th:unless="${user.avatarUrl != null and !user.avatarUrl.isEmpty()}" th:text="${#strings.substring(user.fullName,0,1)}"></span>
+        </div>
+      </div>
+    </header>
+
+    <div th:if="${success}" class="alert alert-success"><span th:text="${success}"></span></div>
+    <div th:if="${error}" class="alert alert-error"><span th:text="${error}"></span></div>
+
+    <div class="content-area">
+      <th:block th:replace="${content}"/>
+    </div>
+  </div>
+</div>
+
+<script th:src="@{/js/app.js}"></script>
+<script>
+// Dark mode
+function toggleDarkMode() {
+  const isDark = document.body.classList.toggle('dark-mode');
+  localStorage.setItem('darkMode', isDark);
+  document.getElementById('darkIcon').className = isDark ? 'ti ti-sun' : 'ti ti-moon';
+}
+(function() {
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark-mode');
+    const icon = document.getElementById('darkIcon');
+    if (icon) icon.className = 'ti ti-sun';
+  }
+})();
+</script>
+</body>
+</html>
+</th:block>
+</html>

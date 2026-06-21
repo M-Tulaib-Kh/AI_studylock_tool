@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Rewards</title>
+
+<main>
+
+  <div class="page-header">
+    <h1 class="page-title">🏆 Rewards &amp; Achievements</h1>
+  </div>
+
+  <!-- XP Card -->
+  <div th:if="${gameState != null}" class="card"
+    style="background:var(--primary-gradient);border:none;color:#fff;margin-bottom:1.5rem">
+
+    <div class="card-body">
+
+      <!-- Top section -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+
+        <div>
+          <div style="font-size:0.85rem;opacity:0.8">Current Level</div>
+          <div style="font-size:2.5rem;font-weight:800" th:text="'Level ' + ${gameState.level}">Level 1</div>
+        </div>
+
+        <div style="text-align:right">
+          <div style="font-size:0.85rem;opacity:0.8">Total XP</div>
+          <div style="font-size:2rem;font-weight:800" th:text="${gameState.points} + ' XP'">0 XP</div>
+        </div>
+
+      </div>
+
+      <!-- Progress Bar -->
+      <div style="background:rgba(255,255,255,0.2);border-radius:999px;height:10px">
+
+        <div style="background:#fff;height:100%;border-radius:999px"
+          th:style="'width:' + (${gameState.levelProgress} * 100) + '%'">
+        </div>
+
+      </div>
+
+      <!-- Progress Text -->
+      <div style="display:flex;justify-content:space-between;margin-top:0.5rem;font-size:0.8rem;opacity:0.8">
+
+        <span th:text="'Level ' + ${gameState.level}"></span>
+
+        <span th:text="${(gameState.levelProgress * 100)} + '% → Level ' + ${gameState.level + 1}">
+        </span>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:1.5rem">
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">🔥</div>
+      <div class="stat-info">
+        <div class="stat-number" th:text="${gameState != null ? gameState.streak : 0}">0</div>
+        <div class="stat-label">Day Streak</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">🏅</div>
+      <div class="stat-info">
+        <div class="stat-number" th:text="${gameState != null ? gameState.longestStreak : 0}">0</div>
+        <div class="stat-label">Best Streak</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg,#10b981,#059669)">⏱</div>
+      <div class="stat-info">
+        <div class="stat-number" th:text="${stats != null ? stats.totalSeconds / 3600 : 0} + 'h'">0h</div>
+        <div class="stat-label">Total Studied</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Badges -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">🎖 Badges</h3>
+    </div>
+
+    <div class="card-body">
+      <div id="badgesGrid" class="badge-grid"></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <a th:href="@{/session/setup}" class="card" style="margin-top:1.5rem;display:flex;align-items:center;justify-content:space-between;
+          padding:1.25rem 1.5rem;background:var(--primary-gradient);border:none;
+          color:#fff;text-decoration:none;border-radius:var(--radius)">
+
+    <div>
+      <div style="font-weight:700">Start Studying</div>
+      <div style="opacity:0.8;font-size:0.85rem">Earn 2 XP per minute</div>
+    </div>
+
+    <i class="ti ti-arrow-right"></i>
+  </a>
+
+  <!-- Badges Script -->
+  <script th:inline="javascript">
+
+    const badgesJson = /*[[${gameState != null ? gameState.badgesJson : '[]'}]]*/ '[]';
+
+    const icons = {
+      award: '🏆',
+      flame: '🔥',
+      eye: '👁',
+      time: '⏱',
+      sunny: '☀️',
+      book: '📚'
+    };
+
+    try {
+      const badges = JSON.parse(badgesJson);
+
+      document.getElementById('badgesGrid').innerHTML = badges.map(b =>
+        `<div class="badge-card ${b.unlocked ? 'unlocked' : ''}">
+        <div class="badge-icon">${icons[b.icon] || '⭐'}</div>
+        <strong style="font-size:0.875rem">${b.name}</strong>
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">
+          ${b.description}
+        </div>
+        ${b.unlocked
+          ? '<div style="color:var(--primary);font-size:0.75rem;font-weight:600;margin-top:4px">Unlocked ✓</div>'
+          : ''}
+     </div>`
+      ).join('');
+
+    } catch (e) {
+      document.getElementById('badgesGrid').innerHTML =
+        '<p style="color:var(--text-muted)">No badges yet</p>';
+    }
+
+  </script>
+
+</main>
+
+</html>

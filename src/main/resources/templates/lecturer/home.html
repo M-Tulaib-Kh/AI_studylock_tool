@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Lecturer Dashboard</title>
+<main>
+
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+  <div>
+    <h1 class="page-title" th:text="'Hello, ' + ${user.fullName.split(' ')[0]} + '! 👨‍🏫'">Hello!</h1>
+    <p class="page-subtitle">Your teaching dashboard</p>
+  </div>
+  <a th:href="@{/lecturer/create/lecture}" class="btn btn-primary">
+    <i class="ti ti-plus"></i> Upload Lecture
+  </a>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:var(--primary-gradient)">📚</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${courses.size()}">0</div>
+      <div class="stat-label">Courses</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">🎬</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${lectures.size()}">0</div>
+      <div class="stat-label">Lectures</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">📝</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${assignments.size()}">0</div>
+      <div class="stat-label">Assignments</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#10b981,#059669)">📨</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${submissions.size()}">0</div>
+      <div class="stat-label">Submissions</div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="grid-3" style="margin-top:1.5rem">
+  <a th:href="@{/lecturer/create/lecture}" class="card"
+     style="text-decoration:none;color:inherit;text-align:center;padding:1.5rem;transition:transform 0.2s"
+     onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+    <div style="font-size:2rem;margin-bottom:0.5rem">🎬</div>
+    <div style="font-weight:700">Upload Lecture</div>
+    <div style="color:var(--text-muted);font-size:0.85rem">PDF or video material</div>
+  </a>
+  <a th:href="@{/lecturer/create/assignment}" class="card"
+     style="text-decoration:none;color:inherit;text-align:center;padding:1.5rem;transition:transform 0.2s"
+     onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+    <div style="font-size:2rem;margin-bottom:0.5rem">📝</div>
+    <div style="font-weight:700">Create Assignment</div>
+    <div style="color:var(--text-muted);font-size:0.85rem">AI-assisted generation</div>
+  </a>
+  <a th:href="@{/lecturer/create/quiz}" class="card"
+     style="text-decoration:none;color:inherit;text-align:center;padding:1.5rem;transition:transform 0.2s"
+     onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+    <div style="font-size:2rem;margin-bottom:0.5rem">❓</div>
+    <div style="font-weight:700">Create Quiz</div>
+    <div style="color:var(--text-muted);font-size:0.85rem">AI question generator</div>
+  </a>
+</div>
+
+<!-- Recent Submissions -->
+<div class="card" style="margin-top:1.5rem">
+  <div class="card-header">
+    <h3 class="card-title">📨 Recent Submissions</h3>
+    <a th:href="@{/lecturer/manage(tab='submissions')}" class="btn btn-sm btn-outline">View All</a>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="table">
+      <thead><tr><th>Student</th><th>Assignment</th><th>Submitted</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr th:each="sub : ${submissions}" th:if="${subStat.index < 10}">
+          <td th:text="${sub.student.fullName}"></td>
+          <td th:text="${sub.assignment.title}"></td>
+          <td th:text="${#temporals.format(sub.submittedAt,'dd MMM HH:mm')}"></td>
+          <td>
+            <span th:if="${sub.status.name()=='GRADED'}" class="badge badge-green">GRADED</span>
+            <span th:if="${sub.status.name()=='LATE'}" class="badge badge-red">LATE</span>
+            <span th:if="${sub.status.name()=='SUBMITTED'}" class="badge badge-yellow">SUBMITTED</span>
+          </td>
+          <td>
+            <a th:href="@{'/lecturer/grade/' + ${sub.id}}" class="btn btn-sm btn-primary"
+               th:if="${sub.status.name() != 'GRADED'}">Grade</a>
+            <span th:if="${sub.status.name() == 'GRADED'}" th:text="${sub.marksObtained} + '/' + ${sub.assignment.totalMarks}"
+                  class="badge badge-green"></span>
+          </td>
+        </tr>
+        <tr th:if="${submissions.isEmpty()}">
+          <td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted)">No submissions yet</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</main>
+</html>

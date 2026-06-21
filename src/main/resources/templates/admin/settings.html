@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Settings — StudyLock Admin</title>
+<main>
+<div class="page-header">
+    <h1 class="page-title">⚙️ System Settings</h1>
+    <p class="page-subtitle">Platform configuration</p>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3 class="card-title">General Settings</h3></div>
+    <div class="card-body">
+        <div class="alert" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:12px;padding:1rem;color:var(--text-primary)">
+            ⚙️ Settings are configured in <code>application.properties</code>. OpenRouter AI API key, database connection, and file upload limits can be set there.
+        </div>
+        <div class="form-group" style="margin-top:1rem">
+            <label class="form-label">OpenRouter API Key (from application.properties)</label>
+            <input type="text" class="form-control" value="openrouter.api.key=configured (sk-or-v1-...)" readonly>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Database URL</label>
+            <input type="text" class="form-control" value="jdbc:mysql://localhost:3306/studylock_db" readonly>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Max File Upload Size</label>
+            <input type="text" class="form-control" value="50MB" readonly>
+        </div>
+    </div>
+</div>
+</main>
+</html>

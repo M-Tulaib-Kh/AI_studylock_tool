@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Academic</title>
+<main>
+<div class="page-header">
+  <h1 class="page-title">🎓 Academic Content</h1>
+  <p class="page-subtitle">All your lectures, assignments and quizzes in one place</p>
+</div>
+
+<div class="tabs" id="mainTabs">
+  <button class="tab-btn" id="btn-lectures" onclick="switchTab('lectures',this)">📖 Lectures</button>
+  <button class="tab-btn" id="btn-assignments" onclick="switchTab('assignments',this)">📝 Assignments</button>
+  <button class="tab-btn" id="btn-quizzes" onclick="switchTab('quizzes',this)">❓ Quizzes</button>
+</div>
+
+<!-- LECTURES -->
+<div id="panel-lectures" class="tab-panel">
+  <div class="grid-3">
+    <div th:each="lec : ${lectures}" class="card card-hover" style="cursor:pointer">
+      <div class="card-body">
+        <div style="font-size:2rem;margin-bottom:0.75rem">📄</div>
+        <span class="badge badge-purple" style="margin-bottom:0.5rem;display:inline-block" th:text="${lec.subject}"></span>
+        <div style="font-weight:700;margin-bottom:0.25rem;font-size:0.95rem" th:text="${lec.title}"></div>
+        <div style="color:var(--text-muted);font-size:0.8rem;margin-bottom:1rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical" th:text="${lec.description}"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:0.75rem;color:var(--text-muted)"><i class="ti ti-eye"></i> <span th:text="${lec.views}">0</span></span>
+          <div style="display:flex;gap:0.4rem">
+            <a th:if="${lec.fileUrl != null and !lec.fileUrl.isEmpty()}"
+               th:href="@{${lec.fileUrl}}" th:attr="download=${lec.fileName}"
+               class="btn btn-sm btn-outline" onclick="event.stopPropagation()">
+              <i class="ti ti-download"></i>
+            </a>
+            <a th:href="@{'/student/lecture/' + ${lec.id}}" class="btn btn-sm btn-primary">View</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div th:if="${lectures == null or #lists.isEmpty(lectures)}" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-muted)">
+      <div style="font-size:3rem">📖</div><p>No lectures available yet</p>
+    </div>
+  </div>
+</div>
+
+<!-- ASSIGNMENTS -->
+<div id="panel-assignments" class="tab-panel">
+  <div style="display:flex;flex-direction:column;gap:1rem">
+    <div th:each="a : ${assignments}" class="card card-hover">
+      <div class="card-body" style="display:flex;align-items:center;gap:1rem">
+        <div style="width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0"
+             th:style="${a.overdue} ? 'background:#fee2e2' : 'background:#fef3c7'">
+          <span th:text="${a.overdue} ? '⚠️' : '📋'"></span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700" th:text="${a.title}"></div>
+          <div style="color:var(--text-muted);font-size:0.85rem" th:text="${a.subject + (a.course != null ? ' • ' + a.course.title : '')}"></div>
+          <div style="font-size:0.8rem;margin-top:2px"
+               th:style="${a.overdue} ? 'color:#ef4444' : 'color:var(--text-muted)'"
+               th:text="${a.overdue ? 'OVERDUE — Due: ' + #temporals.format(a.deadline,'dd MMM yyyy') : 'Due: ' + #temporals.format(a.deadline,'dd MMM yyyy HH:mm')}"></div>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center;flex-shrink:0">
+          <span class="badge badge-gray" th:text="${a.totalMarks} + ' marks'"></span>
+          <!-- Download assignment file if exists -->
+          <a th:if="${a.fileUrl != null and !a.fileUrl.isEmpty()}"
+             th:href="@{${a.fileUrl}}" th:attr="download=${a.fileName}"
+             class="btn btn-sm btn-outline" title="Download assignment file">
+            <i class="ti ti-download"></i>
+          </a>
+          <a th:href="@{'/student/assignment/' + ${a.id}}" class="btn btn-sm btn-primary">View</a>
+        </div>
+      </div>
+    </div>
+    <div th:if="${assignments == null or #lists.isEmpty(assignments)}" style="text-align:center;padding:3rem;color:var(--text-muted)">
+      <div style="font-size:3rem">📝</div><p>No assignments yet</p>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZZES -->
+<div id="panel-quizzes" class="tab-panel">
+  <div class="grid-3">
+    <div th:each="q : ${quizzes}" class="card card-hover">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
+          <div style="font-size:1.75rem">❓</div>
+          <div style="display:flex;gap:0.4rem">
+            <span th:if="${q.aiGenerated}" class="badge badge-purple">AI</span>
+            <!-- Quiz file download -->
+            <a th:if="${q.fileUrl != null and !q.fileUrl.isEmpty()}"
+               th:href="@{${q.fileUrl}}" th:attr="download=${q.fileName}"
+               class="btn btn-sm btn-outline" title="Download quiz file" onclick="event.stopPropagation()">
+              <i class="ti ti-download"></i>
+            </a>
+          </div>
+        </div>
+        <div style="font-weight:700;margin-bottom:0.25rem" th:text="${q.title}"></div>
+        <div style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem" th:text="${q.subject}"></div>
+        <div style="display:flex;gap:0.75rem;font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem">
+          <span>⏱ <span th:text="${q.durationMinutes}"></span> min</span>
+          <span>•</span>
+          <span th:text="${q.totalMarks} + ' marks'"></span>
+        </div>
+        <a th:href="@{'/student/quiz/' + ${q.id}}" class="btn btn-primary" style="width:100%;justify-content:center">
+          <i class="ti ti-player-play"></i> Attempt Quiz
+        </a>
+      </div>
+    </div>
+    <div th:if="${quizzes == null or #lists.isEmpty(quizzes)}" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--text-muted)">
+      <div style="font-size:3rem">❓</div><p>No quizzes yet</p>
+    </div>
+  </div>
+</div>
+
+<script th:inline="javascript">
+const initTab = /*[[${tab}]]*/ 'lectures';
+function switchTab(name, el){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  (el || document.getElementById('btn-'+name)).classList.add('active');
+}
+// Init
+switchTab(initTab || 'lectures');
+</script>
+</main>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Setup Session</title>
+<main>
+
+<div class="page-header">
+  <h1 class="page-title">⏱ Start Study Session</h1>
+  <p class="page-subtitle">Set your focus timer and start earning XP</p>
+</div>
+
+<div th:if="${activeSession != null}" class="alert alert-info" style="margin-bottom:1.5rem">
+  <i class="ti ti-alert-circle"></i>
+  You have an active session running.
+  <a th:href="@{/session/active}" style="font-weight:700;color:var(--primary);margin-left:0.5rem">Resume →</a>
+</div>
+
+<div class="grid-2">
+  <!-- Session Settings -->
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">⚙️ Session Settings</h3></div>
+    <div class="card-body">
+      <form id="sessionForm" th:action="@{/session/start}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <div class="form-group">
+          <label class="form-label">Duration</label>
+          <select name="plannedMinutes" class="form-control">
+            <option value="25">🍅 25 min — Pomodoro</option>
+            <option value="45">45 minutes</option>
+            <option value="60" selected>1 hour</option>
+            <option value="90">1.5 hours</option>
+            <option value="120">2 hours</option>
+          </select>
+        </div>
+        <div style="margin-bottom:1rem;padding:1rem;background:var(--primary-light);border-radius:12px;font-size:0.875rem;color:var(--primary)">
+          💡 <strong>Tip:</strong> Complete the full session to earn XP and maintain your streak. Tab-switches are tracked.
+        </div>
+        <button type="submit" id="startBtn" class="btn btn-primary"
+                style="width:100%;justify-content:center;padding:0.875rem;font-size:1rem"
+                onclick="disableStart()">
+          <i class="ti ti-player-play"></i>
+          <span id="startBtnText">Start Session</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">📊 Your Stats</h3></div>
+    <div class="card-body">
+      <div style="display:flex;flex-direction:column;gap:0.75rem">
+        <div style="display:flex;justify-content:space-between;padding:0.75rem;background:var(--bg);border-radius:10px">
+          <span>🔥 Current Streak</span>
+          <strong th:text="${gameState != null ? gameState.streak + ' days' : '0 days'}">0 days</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0.75rem;background:var(--bg);border-radius:10px">
+          <span>⭐ Total XP</span>
+          <strong th:text="${gameState != null ? gameState.points + ' XP' : '0 XP'}">0 XP</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0.75rem;background:var(--bg);border-radius:10px">
+          <span>🏅 Level</span>
+          <strong th:text="${gameState != null ? 'Level ' + gameState.level : 'Level 1'}">Level 1</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:0.75rem;background:var(--bg);border-radius:10px">
+          <span>⏱ Today</span>
+          <strong th:text="${(stats.todaySeconds ?: 0) / 60} + ' min'">0 min</strong>
+        </div>
+      </div>
+      <div style="margin-top:1rem;padding:0.875rem;background:rgba(16,185,129,0.08);border-radius:10px;font-size:0.82rem;color:#10b981;text-align:center">
+        🎯 Want topic-by-topic tracking? Use <a th:href="@{/student/topic-session}" style="color:#10b981;font-weight:700">Topic Session</a> instead
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function disableStart() {
+  const btn = document.getElementById('startBtn');
+  const txt = document.getElementById('startBtnText');
+  btn.disabled = true;
+  txt.textContent = 'Starting...';
+  setTimeout(() => { btn.disabled = false; txt.textContent = 'Start Session'; }, 5000);
+}
+</script>
+</main>
+</html>

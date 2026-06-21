@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Grade Submission</title>
+<main>
+<div style="max-width:760px;margin:0 auto">
+  <a href="javascript:history.back()" class="btn btn-outline btn-sm" style="margin-bottom:1rem">
+    <i class="ti ti-arrow-left"></i> Back
+  </a>
+
+  <div class="grid-2" style="margin-bottom:1.5rem">
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+          <div style="width:48px;height:48px;border-radius:50%;background:var(--primary-gradient);display:flex;align-items:center;justify-content:center;font-size:1.25rem;color:#fff;font-weight:700"
+               th:text="${#strings.substring(submission.student.fullName,0,1)}"></div>
+          <div>
+            <div style="font-weight:700" th:text="${submission.student.fullName}"></div>
+            <div style="color:var(--text-muted);font-size:0.85rem" th:text="${submission.student.email}"></div>
+          </div>
+        </div>
+        <div style="color:var(--text-muted);font-size:0.875rem">Assignment: <strong th:text="${assignment.title}"></strong></div>
+        <div style="color:var(--text-muted);font-size:0.875rem">Submitted: <span th:text="${#temporals.format(submission.submittedAt,'dd MMM yyyy HH:mm')}"></span></div>
+        <span class="badge badge-green" th:if="${submission.status.name()=='GRADED'}" style="margin-top:0.5rem">Already Graded</span>
+      </div>
+    </div>
+    <div class="card" th:if="${submission.fileUrl != null and !submission.fileUrl.isEmpty()}">
+      <div class="card-body">
+        <div style="font-weight:700;margin-bottom:1rem">📄 Submitted File</div>
+        <div style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem" th:text="${submission.fileName}"></div>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-outline" onclick="togglePdf()"><i class="ti ti-eye"></i> View</button>
+          <a th:href="@{${submission.fileUrl}}" download class="btn btn-primary"><i class="ti ti-download"></i> Download</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pdfArea" style="display:none;margin-bottom:1.5rem" class="card">
+    <div class="card-body">
+      <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem">
+        <div style="display:flex;gap:0.5rem">
+          <button onclick="prevPage()" class="btn btn-sm btn-outline">←</button>
+          <button onclick="nextPage()" class="btn btn-sm btn-outline">→</button>
+        </div>
+        <span id="pageInfo" style="color:var(--text-muted);font-size:0.85rem"></span>
+        <button onclick="togglePdf()" class="btn btn-sm btn-outline">Close</button>
+      </div>
+      <canvas id="pdfCanvas" style="width:100%;border-radius:10px"></canvas>
+    </div>
+  </div>
+
+  <!-- AI Grade + Form -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Grade Submission</h3>
+      <button type="button" class="btn btn-outline btn-sm" onclick="aiGrade()" id="aiBtn">
+        <i class="ti ti-sparkles"></i> AI Auto-Grade
+      </button>
+    </div>
+    <div class="card-body">
+      <div id="aiLoading" style="display:none;padding:0.5rem;background:var(--primary-light);border-radius:8px;color:var(--primary);margin-bottom:1rem">
+        ✨ AI is grading...
+      </div>
+      <form th:action="@{'/lecturer/grade/' + ${submission.id}}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Marks <span style="color:var(--text-muted)" th:text="'(max ' + ${assignment.totalMarks} + ')'"></span></label>
+            <input type="number" name="marks" id="marksInput" class="form-control" min="0"
+                   th:max="${assignment.totalMarks}" required
+                   th:value="${submission.marksObtained}"
+                   style="font-size:1.5rem;font-weight:700;text-align:center"/>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:center;padding-top:1.5rem">
+            <div style="font-size:1.25rem;color:var(--text-muted)">/ <span th:text="${assignment.totalMarks}"></span></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Feedback for Student</label>
+          <textarea name="feedback" id="feedbackInput" class="form-control" rows="5"
+                    th:text="${submission.feedback}"
+                    placeholder="Provide detailed feedback..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+          <i class="ti ti-check"></i> Save Grade
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script th:inline="javascript">
+const pdfUrl=/*[[${submission.fileUrl}]]*/'';
+const assignmentDesc=/*[[${assignment.description + ' ' + assignment.instructions}]]*/'';
+const totalMarks=/*[[${assignment.totalMarks}]]*/100;
+let pdfDoc=null,pageNum=1,showing=false;
+function togglePdf(){
+  showing=!showing;
+  document.getElementById('pdfArea').style.display=showing?'block':'none';
+  if(showing&&!pdfDoc&&pdfUrl){
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfjsLib.getDocument(pdfUrl).promise.then(p=>{pdfDoc=p;renderPage(1);});
+  }
+}
+function renderPage(n){pdfDoc.getPage(n).then(p=>{const c=document.getElementById('pdfCanvas'),vp=p.getViewport({scale:1.5});c.height=vp.height;c.width=vp.width;p.render({canvasContext:c.getContext('2d'),viewport:vp});document.getElementById('pageInfo').textContent='Page '+n+' of '+pdfDoc.numPages;});}
+function prevPage(){if(pageNum>1){pageNum--;renderPage(pageNum);}}
+function nextPage(){if(pdfDoc&&pageNum<pdfDoc.numPages){pageNum++;renderPage(pageNum);}}
+async function aiGrade(){
+  document.getElementById('aiBtn').disabled=true;
+  document.getElementById('aiLoading').style.display='block';
+  try{
+    const r=await fetch('/lecturer/ai/grade-submission',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({assignmentPrompt:assignmentDesc,notes:'',totalMarks:totalMarks})});
+    const d=await r.json();
+    if(d.success&&d.data){document.getElementById('marksInput').value=d.data.marks;document.getElementById('feedbackInput').value=d.data.feedback;}
+  }catch(e){}finally{document.getElementById('aiBtn').disabled=false;document.getElementById('aiLoading').style.display='none';}
+}
+</script>
+</main>
+</html>

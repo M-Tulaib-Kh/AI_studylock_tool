@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Session Result</title>
+<main>
+<div style="max-width:600px;margin:0 auto">
+
+  <div style="text-align:center;margin-bottom:2rem">
+    <div style="font-size:5rem;margin-bottom:0.5rem"
+         th:text="${status == 'completed'} ? '🎉' : '😔'">🎉</div>
+    <h1 class="page-title"
+        th:text="${status == 'completed'} ? 'Session Completed!' : 'Session Ended Early'">Result</h1>
+    <p class="page-subtitle">Here's how your session went</p>
+  </div>
+
+  <!-- Result Stats -->
+  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:1.5rem">
+    <div class="stat-card" style="flex-direction:column;text-align:center;gap:0.5rem">
+      <div style="font-size:1.75rem">⏱</div>
+      <div class="stat-number" th:text="${duration / 60} + 'm'">0m</div>
+      <div class="stat-label">Studied</div>
+    </div>
+    <div class="stat-card" style="flex-direction:column;text-align:center;gap:0.5rem">
+      <div style="font-size:1.75rem">⭐</div>
+      <div class="stat-number" th:text="${xp} + ' XP'">0 XP</div>
+      <div class="stat-label">Earned</div>
+    </div>
+    <div class="stat-card" style="flex-direction:column;text-align:center;gap:0.5rem">
+      <div style="font-size:1.75rem">⚠️</div>
+      <div class="stat-number" th:text="${violations}">0</div>
+      <div class="stat-label">Violations</div>
+    </div>
+  </div>
+
+  <!-- Efficiency Bar -->
+  <div class="card" style="margin-bottom:1.5rem">
+    <div class="card-body" style="text-align:center">
+      <div style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem">Session Efficiency</div>
+      <div style="font-size:2.5rem;font-weight:800;color:var(--primary)"
+           th:text="${100 - violations * 33 < 0 ? 0 : 100 - violations * 33} + '%'">100%</div>
+      <div class="progress-bar-wrap" style="margin-top:0.75rem">
+        <div class="progress-bar-fill"
+             th:style="'width:' + (${100 - violations * 33 < 0 ? 0 : 100 - violations * 33}) + '%'"></div>
+      </div>
+      <div th:if="${xp > 0}" style="margin-top:1rem;padding:0.75rem;background:var(--primary-light);border-radius:10px;color:var(--primary);font-weight:600">
+        🎉 You earned <span th:text="${xp}">0</span> XP! Keep it up!
+      </div>
+      <div th:if="${xp == 0 and status == 'completed'}" style="margin-top:1rem;padding:0.75rem;background:#fef3c7;border-radius:10px;color:#92400e;font-weight:600">
+        Session completed but had too many violations — no XP awarded.
+      </div>
+      <div th:if="${status != 'completed'}" style="margin-top:1rem;padding:0.75rem;background:#fee2e2;border-radius:10px;color:#991b1b;font-weight:600">
+        Session ended early — no XP awarded. You've got this next time!
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+    <a th:href="@{/session/setup}" class="btn btn-primary"><i class="ti ti-refresh"></i> New Session</a>
+    <a th:href="@{/student/home}" class="btn btn-outline"><i class="ti ti-home"></i> Dashboard</a>
+    <a th:href="@{/student/rewards}" class="btn btn-outline"><i class="ti ti-trophy"></i> Rewards</a>
+  </div>
+</div>
+</main>
+</html>

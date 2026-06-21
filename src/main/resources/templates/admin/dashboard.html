@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Dashboard</title>
+<main>
+
+<div class="page-header">
+  <h1 class="page-title">📊 Admin Dashboard</h1>
+  <p class="page-subtitle">Platform overview and analytics</p>
+</div>
+
+<!-- Stats Row -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:var(--primary-gradient)">👥</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${userStats.total}">0</div>
+      <div class="stat-label">Total Users</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#10b981,#059669)">🎓</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${userStats.students}">0</div>
+      <div class="stat-label">Students</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">👨‍🏫</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${userStats.lecturers}">0</div>
+      <div class="stat-label">Lecturers</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">📚</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${totalCourses}">0</div>
+      <div class="stat-label">Courses</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#ec4899,#db2777)">📝</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${totalLectures}">0</div>
+      <div class="stat-label">Lectures</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)">⏱</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${activeSessions}">0</div>
+      <div class="stat-label">Active Sessions</div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Links + Recent Logins -->
+<div class="grid-2" style="margin-top:1.5rem">
+
+  <!-- Quick Actions -->
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">⚡ Quick Actions</h3></div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:0.75rem">
+      <a th:href="@{/admin/users}" class="btn btn-outline" style="justify-content:flex-start">
+        <i class="ti ti-user-plus"></i> Manage Users</a>
+      <a th:href="@{/admin/courses}" class="btn btn-outline" style="justify-content:flex-start">
+        <i class="ti ti-book"></i> View Courses</a>
+      <a th:href="@{/admin/reports}" class="btn btn-outline" style="justify-content:flex-start">
+        <i class="ti ti-chart-bar"></i> View Reports</a>
+      <a th:href="@{/admin/notifications}" class="btn btn-outline" style="justify-content:flex-start">
+        <i class="ti ti-bell"></i> Send Broadcast</a>
+    </div>
+  </div>
+
+  <!-- Platform Summary -->
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">📈 Platform Summary</h3></div>
+    <div class="card-body">
+      <div style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid var(--border-light)">
+        <span style="color:var(--text-muted)">Total Sessions</span>
+        <strong th:text="${sessionStats.total}">0</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid var(--border-light)">
+        <span style="color:var(--text-muted)">Completed Sessions</span>
+        <strong th:text="${sessionStats.completed}">0</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid var(--border-light)">
+        <span style="color:var(--text-muted)">Total Assignments</span>
+        <strong th:text="${totalAssignments}">0</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid var(--border-light)">
+        <span style="color:var(--text-muted)">Total Quizzes</span>
+        <strong th:text="${totalQuizzes}">0</strong>
+      </div>
+      <div style="margin-top:1.25rem;display:flex;flex-direction:column;gap:0.5rem">
+        <a href="/admin/courses" class="btn btn-primary btn-sm" style="justify-content:center;width:100%"><i class="ti ti-plus"></i> Create Course</a>
+        <a href="/admin/lecturer-overview" class="btn btn-outline btn-sm" style="justify-content:center;width:100%"><i class="ti ti-chalkboard"></i> Lecturer Overview</a>
+        <a href="/admin/reports" class="btn btn-outline btn-sm" style="justify-content:center;width:100%"><i class="ti ti-chart-bar"></i> View All Reports</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Login Events -->
+<div class="card" style="margin-top:1.5rem">
+  <div class="card-header">
+    <h3 class="card-title">🔐 Recent Login Activity</h3>
+    <a th:href="@{/admin/reports}" class="btn btn-sm btn-outline">View All</a>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="table">
+      <thead>
+        <tr><th>User</th><th>Role</th><th>Email</th><th>Device</th><th>Time</th></tr>
+      </thead>
+      <tbody>
+        <tr th:each="ev : ${loginEvents}">
+          <td th:text="${ev.name}"></td>
+          <td>
+            <span th:if="${ev.role.name() == 'ADMIN'}" class="badge badge-purple">ADMIN</span>
+            <span th:if="${ev.role.name() == 'LECTURER'}" class="badge badge-blue">LECTURER</span>
+            <span th:if="${ev.role.name() == 'STUDENT'}" class="badge badge-green">STUDENT</span>
+          </td>
+          <td th:text="${ev.email}"></td>
+          <td th:text="${ev.deviceInfo ?: '—'}"></td>
+          <td th:text="${#temporals.format(ev.loggedInAt,'dd MMM HH:mm')}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(loginEvents)}">
+          <td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem">No logins yet</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</main>
+</html>

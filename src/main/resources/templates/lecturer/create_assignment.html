@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Create Assignment</title>
+<main>
+<div style="max-width:800px;margin:0 auto">
+  <a href="javascript:history.back()" class="btn btn-outline btn-sm" style="margin-bottom:1.25rem"><i class="ti ti-arrow-left"></i> Back</a>
+
+  <!-- AI Panel -->
+  <div class="card" style="margin-bottom:1.5rem;border:2px solid rgba(124,58,237,0.3);background:var(--primary-light)">
+    <div class="card-body">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div>
+          <div style="font-weight:800;color:var(--primary)">✨ AI Assignment Generator</div>
+          <div style="color:var(--text-muted);font-size:0.82rem">Let AI create the assignment details</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer">
+          <input type="checkbox" id="aiToggle" onchange="toggleAI(this)" style="accent-color:var(--primary);width:18px;height:18px"/>
+          <span style="font-weight:600;color:var(--primary)">Enable AI</span>
+        </label>
+      </div>
+      <div id="aiPanel" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Subject</label>
+            <input type="text" id="aiSubject" class="form-control" placeholder="e.g. Computer Science"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Topic / Prompt</label>
+            <input type="text" id="aiPrompt" class="form-control" placeholder="e.g. Linked lists and recursion"/>
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="generateAssignment()" id="genBtn">
+          <i class="ti ti-sparkles"></i> Generate with AI
+        </button>
+        <div id="aiStatus" style="display:none;margin-top:0.75rem;color:var(--primary);font-size:0.875rem">
+          <span class="ai-spinner"></span> Generating — this may take 15-30 seconds...
+        </div>
+        <div id="aiError" style="display:none;margin-top:0.75rem;padding:0.75rem;background:rgba(239,68,68,0.1);border-radius:8px;color:#dc2626;font-size:0.875rem"></div>
+        <div id="aiSuccess" style="display:none;margin-top:0.75rem;padding:0.75rem;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:8px;color:#065f46;font-size:0.875rem">
+          ✅ Assignment generated! Review and edit below.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">📝 Assignment Details</h3></div>
+    <div class="card-body">
+      <form th:action="@{/lecturer/create/assignment}" method="post" enctype="multipart/form-data">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" name="aiGenerated" id="aiGeneratedField" value="false"/>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Course</label>
+            <select name="courseId" class="form-control course-select" required>
+              <option value="">Select course...</option>
+              <option th:each="c : ${courses}" th:value="${c.id}" th:text="${c.title}"
+                      th:attr="data-meta=${c.subject + ' · Sem ' + c.semester + ' · ' + c.creditHours + ' credit hrs'}">Course</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Subject</label>
+            <input type="text" name="subject" id="assignSubject" class="form-control" placeholder="Subject"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <input type="text" name="title" id="assignTitle" class="form-control" placeholder="Assignment title" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea name="description" id="assignDesc" class="form-control" rows="3" placeholder="Assignment overview..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Instructions</label>
+          <textarea name="instructions" id="assignInstr" class="form-control" rows="4" placeholder="Step-by-step instructions..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Total Marks</label>
+            <input type="number" name="totalMarks" class="form-control" value="100" min="1" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Deadline</label>
+            <input type="datetime-local" name="deadline" class="form-control" required/>
+          </div>
+        </div>
+        <!-- Reference file for students to download -->
+        <div class="form-group">
+          <label class="form-label">Reference File for Students (Optional)</label>
+          <div class="upload-zone" onclick="document.getElementById('assignFile').click()">
+            <div style="font-size:1.5rem;margin-bottom:0.25rem">📎</div>
+            <div style="color:var(--text-muted);font-size:0.875rem">Attach a file — students can view &amp; download it</div>
+            <div id="assignFileName" style="display:none;color:var(--primary);font-weight:600;margin-top:0.5rem"></div>
+          </div>
+          <input type="file" id="assignFile" name="file" accept=".pdf,.doc,.docx,.zip,.ppt,.pptx"
+                 style="display:none"
+                 onchange="document.getElementById('assignFileName').textContent=this.files[0].name;document.getElementById('assignFileName').style.display='block'"/>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+          <i class="ti ti-check"></i> Create Assignment
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+function toggleAI(cb){
+  document.getElementById('aiPanel').style.display = cb.checked ? 'block' : 'none';
+  document.getElementById('aiGeneratedField').value = cb.checked ? 'true' : 'false';
+}
+async function generateAssignment(){
+  const subj   = document.getElementById('aiSubject').value.trim();
+  const prompt = document.getElementById('aiPrompt').value.trim();
+  if(!subj||!prompt){ alert('Enter subject and topic'); return; }
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  document.getElementById('aiStatus').style.display  = 'block';
+  document.getElementById('aiError').style.display   = 'none';
+  document.getElementById('aiSuccess').style.display = 'none';
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(()=>controller.abort(), 90000);
+    const r = await fetch('/lecturer/ai/generate-assignment', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({subject:subj, prompt:prompt}),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    const d = await r.json();
+    if(d.success && d.data){
+      document.getElementById('assignTitle').value  = d.data.title   || '';
+      document.getElementById('assignSubject').value= subj;
+      document.getElementById('assignDesc').value   = d.data.description  || '';
+      document.getElementById('assignInstr').value  = d.data.instructions || '';
+      document.getElementById('aiSuccess').style.display = 'block';
+    } else {
+      document.getElementById('aiError').textContent = '❌ ' + (d.error || 'Generation failed. Please try again.');
+      document.getElementById('aiError').style.display = 'block';
+    }
+  } catch(e) {
+    let msg = e.name==='AbortError' ? 'Timed out. Please try again.' : e.message;
+    document.getElementById('aiError').textContent = '❌ ' + msg;
+    document.getElementById('aiError').style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    document.getElementById('aiStatus').style.display = 'none';
+  }
+}
+</script>
+</main>
+</html>

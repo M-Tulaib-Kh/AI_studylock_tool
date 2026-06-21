@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>AI Tutor</title>
+<main>
+
+<div class="page-header">
+  <h1 class="page-title">🤖 AI Study Tutor</h1>
+  <p class="page-subtitle">Ask any academic question — get instant, expert answers in English</p>
+</div>
+
+<div class="grid-2" style="align-items:start">
+  <!-- Chat Panel -->
+  <div class="card" style="grid-column:1/3">
+    <div class="card-header" style="gap:1rem;flex-wrap:wrap">
+      <h3 class="card-title">💬 Chat with AI Tutor</h3>
+      <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
+        <select id="subjectSelect" class="form-control searchable-select" style="width:auto;min-width:220px">
+          <option value="General">🎓 General Studies</option>
+          <option th:each="e : ${enrollments}"
+                  th:value="${e.course.title}"
+                  th:text="'📚 ' + ${e.course.title}">Course</option>
+          <option value="AI &amp; Machine Learning">🤖 AI &amp; Machine Learning</option>
+          <option value="Data Structures">📊 Data Structures &amp; Algorithms</option>
+          <option value="Web Development">🌐 Web Development</option>
+          <option value="Database Systems">🗄️ Database Systems</option>
+          <option value="Operating Systems">💻 Operating Systems</option>
+          <option value="Computer Networks">🌍 Computer Networks</option>
+          <option value="Mathematics">➕ Mathematics</option>
+          <option value="Physics">⚛️ Physics</option>
+        </select>
+        <button onclick="clearChat()" class="btn btn-outline btn-sm">
+          <i class="ti ti-trash"></i> Clear Chat
+        </button>
+      </div>
+    </div>
+
+    <!-- Chat Messages -->
+    <div id="chatMessages" style="min-height:420px;max-height:520px;overflow-y:auto;padding:1.25rem;display:flex;flex-direction:column;gap:1rem">
+      <!-- Welcome message -->
+      <div class="ai-msg" style="display:flex;gap:0.75rem;align-items:flex-start">
+        <div style="width:36px;height:36px;min-width:36px;background:var(--primary-gradient);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem">🤖</div>
+        <div style="background:var(--surface-2);border-radius:12px;border-top-left-radius:4px;padding:1rem;max-width:80%;line-height:1.6;color:var(--text)">
+          <strong>Hello! I'm your AI Study Tutor.</strong> 👋<br>
+          I always respond in English to keep your learning consistent.<br><br>
+          You can ask me about any subject — I'll explain concepts, solve problems, give examples, and help you understand better!<br><br>
+          <em style="color:var(--text-muted);font-size:0.85rem">Select a subject above and start asking questions.</em>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div style="padding:1rem 1.25rem;border-top:1px solid var(--border-light)">
+      <div style="display:flex;gap:0.75rem;align-items:flex-end">
+        <textarea id="userInput" class="form-control" placeholder="Ask your question here... (e.g., 'Explain binary search trees', 'What is polymorphism?')"
+                  style="min-height:56px;max-height:140px;resize:vertical;flex:1"
+                  onkeydown="handleKey(event)"></textarea>
+        <button onclick="sendMessage()" id="sendBtn" class="btn btn-primary" style="min-width:56px;height:56px;padding:0;border-radius:14px">
+          <i class="ti ti-send" style="font-size:1.3rem"></i>
+        </button>
+      </div>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem">
+        Press <kbd style="background:var(--surface-2);padding:1px 6px;border-radius:4px;font-size:0.75rem">Ctrl+Enter</kbd> to send
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tips -->
+<div class="card" style="margin-top:1.5rem">
+  <div class="card-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem">
+    <div style="display:flex;gap:0.75rem;align-items:center">
+      <span style="font-size:1.5rem">💡</span>
+      <div><strong>Ask anything</strong><br><span style="font-size:0.82rem;color:var(--text-muted)">Concepts, examples, code, problems</span></div>
+    </div>
+    <div style="display:flex;gap:0.75rem;align-items:center">
+      <span style="font-size:1.5rem">🔄</span>
+      <div><strong>Context-aware</strong><br><span style="font-size:0.82rem;color:var(--text-muted)">Remembers last 10 messages</span></div>
+    </div>
+    <div style="display:flex;gap:0.75rem;align-items:center">
+      <span style="font-size:1.5rem">🌐</span>
+      <div><strong>English only</strong><br><span style="font-size:0.82rem;color:var(--text-muted)">Consistent learning in English</span></div>
+    </div>
+    <div style="display:flex;gap:0.75rem;align-items:center">
+      <span style="font-size:1.5rem">📚</span>
+      <div><strong>All subjects</strong><br><span style="font-size:0.82rem;color:var(--text-muted)">CS, Math, Physics and more</span></div>
+    </div>
+  </div>
+</div>
+
+<style>
+.user-msg-wrap { display:flex; justify-content:flex-end; gap:0.75rem; align-items:flex-start; }
+.user-bubble { background:var(--primary-gradient);color:#fff;border-radius:12px;border-top-right-radius:4px;padding:0.875rem 1rem;max-width:75%;line-height:1.6;word-break:break-word; }
+.ai-bubble { background:var(--surface-2);border-radius:12px;border-top-left-radius:4px;padding:1rem;max-width:80%;line-height:1.7;color:var(--text);word-break:break-word; }
+.ai-bubble code { background:rgba(124,58,237,0.12);padding:1px 6px;border-radius:4px;font-family:monospace;font-size:0.88em; }
+.ai-bubble pre { background:var(--bg);padding:0.75rem;border-radius:8px;overflow-x:auto;border:1px solid var(--border-light);margin:0.5rem 0; }
+.typing-dot { width:7px;height:7px;background:var(--primary);border-radius:50%;animation:typingBounce 1.2s infinite; }
+.typing-dot:nth-child(2) { animation-delay:0.2s; }
+.typing-dot:nth-child(3) { animation-delay:0.4s; }
+@keyframes typingBounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-8px)} }
+kbd { border:1px solid var(--border-light); }
+</style>
+
+<script th:inline="javascript">
+let conversationHistory = [];
+
+function handleKey(e) {
+  if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); sendMessage(); }
+}
+
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const subject = document.getElementById('subjectSelect').value;
+  
+  appendUserMessage(msg);
+  input.value = '';
+  input.style.height = 'auto';
+  
+  const typingId = appendTyping();
+  document.getElementById('sendBtn').disabled = true;
+  
+  try {
+    const payload = { subject, message: msg, history: conversationHistory };
+    const res = await fetch('/student/ai-tutor/ask', {
+      method:'POST',
+      headers:{'Content-Type':'application/json',
+               'X-CSRF-TOKEN': document.querySelector('meta[name=_csrf]')?.content || getCsrf()},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    removeTyping(typingId);
+    if (data.success) {
+      appendAiMessage(data.answer);
+      conversationHistory.push({role:'user', content: msg});
+      conversationHistory.push({role:'assistant', content: data.answer});
+      if (conversationHistory.length > 20) conversationHistory = conversationHistory.slice(-20);
+    } else {
+      appendAiMessage('⚠️ ' + (data.error || 'AI unavailable, please try again.'));
+    }
+  } catch(err) {
+    removeTyping(typingId);
+    appendAiMessage('⚠️ Connection error. Please check your internet and try again.');
+  } finally {
+    document.getElementById('sendBtn').disabled = false;
+  }
+}
+
+function appendUserMessage(msg) {
+  const chat = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'user-msg-wrap';
+  div.innerHTML = `<div class="user-bubble">${escapeHtml(msg)}</div>
+    <div style="width:36px;height:36px;min-width:36px;background:var(--surface-2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem">👤</div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function appendAiMessage(msg) {
+  const chat = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'ai-msg';
+  div.style.cssText = 'display:flex;gap:0.75rem;align-items:flex-start';
+  // Convert markdown-like formatting
+  const formatted = formatAiText(msg);
+  div.innerHTML = `<div style="width:36px;height:36px;min-width:36px;background:var(--primary-gradient);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem">🤖</div>
+    <div class="ai-bubble">${formatted}</div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function formatAiText(text) {
+  return text
+    .replace(/```([^`]+)```/g, '<pre><code>$1</code></pre>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/^/, '<p>').replace(/$/, '</p>');
+}
+
+function appendTyping() {
+  const chat = document.getElementById('chatMessages');
+  const id = 'typing-' + Date.now();
+  const div = document.createElement('div');
+  div.id = id;
+  div.className = 'ai-msg';
+  div.style.cssText = 'display:flex;gap:0.75rem;align-items:flex-start';
+  div.innerHTML = `<div style="width:36px;height:36px;min-width:36px;background:var(--primary-gradient);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem">🤖</div>
+    <div class="ai-bubble" style="display:flex;gap:5px;align-items:center;padding:1rem">
+      <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+    </div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return id;
+}
+
+function removeTyping(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function clearChat() {
+  conversationHistory = [];
+  const chat = document.getElementById('chatMessages');
+  chat.innerHTML = `<div class="ai-msg" style="display:flex;gap:0.75rem;align-items:flex-start">
+    <div style="width:36px;height:36px;min-width:36px;background:var(--primary-gradient);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem">🤖</div>
+    <div style="background:var(--surface-2);border-radius:12px;border-top-left-radius:4px;padding:1rem;max-width:80%;line-height:1.6;color:var(--text)">Chat cleared. How can I help you study today?</div>
+  </div>`;
+}
+
+function escapeHtml(text) {
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function getCsrf() {
+  const inp = document.querySelector('input[name="_csrf"]');
+  return inp ? inp.value : '';
+}
+</script>
+</main>
+</html>

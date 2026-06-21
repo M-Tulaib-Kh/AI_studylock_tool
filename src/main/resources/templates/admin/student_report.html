@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title th:text="'Report: ' + ${student.fullName}">Student Report</title>
+<main>
+
+<div class="page-header">
+  <div style="display:flex;align-items:center;gap:1rem">
+    <a href="/admin/reports" class="btn btn-outline btn-sm"><i class="ti ti-arrow-left"></i> Back</a>
+    <div>
+      <h1 class="page-title" th:text="'📊 Report: ' + ${student.fullName}">Student Report</h1>
+      <p class="page-subtitle" th:text="${student.email}"></p>
+    </div>
+  </div>
+</div>
+
+<!-- Stats Row -->
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.5rem">
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#7c3aed,#4f46e5)">🎓</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${gpa}">0.00</div>
+      <div class="stat-label">GPA (of 4.0)</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">📝</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${avgMarks + '%'}">0%</div>
+      <div class="stat-label">Avg. Score</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#10b981,#059669)">📚</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${enrollments.size()}">0</div>
+      <div class="stat-label">Enrolled Courses</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">📋</div>
+    <div class="stat-info">
+      <div class="stat-number" th:text="${submissions.size()}">0</div>
+      <div class="stat-label">Submissions</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2" style="gap:1.5rem;align-items:start">
+  <!-- Submissions -->
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">📋 Assignment Submissions</h3></div>
+    <div style="padding:0">
+      <div th:if="${submissions.isEmpty()}" style="padding:1.5rem;text-align:center;color:var(--text-muted)">No submissions</div>
+      <div th:each="s : ${submissions}" style="display:flex;align-items:center;gap:1rem;padding:0.875rem 1.25rem;border-bottom:1px solid var(--border-light)">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:0.875rem" th:text="${s.assignment.title}">Assignment</div>
+          <div style="font-size:0.78rem;color:var(--text-muted)" th:text="${#temporals.format(s.submittedAt,'dd MMM yyyy')}"></div>
+        </div>
+        <div th:if="${s.marksObtained != null}">
+          <span class="badge"
+            th:style="${s.marksObtained >= s.assignment.totalMarks * 0.7} ? 'background:rgba(16,185,129,0.12);color:#10b981' : 'background:rgba(245,158,11,0.12);color:#f59e0b'"
+            th:text="${s.marksObtained} + '/' + ${s.assignment.totalMarks}">-</span>
+        </div>
+        <div th:unless="${s.marksObtained != null}">
+          <span class="badge" style="background:rgba(107,114,128,0.12);color:var(--text-muted)">Pending</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz Attempts -->
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">🧠 Quiz Attempts</h3></div>
+    <div style="padding:0">
+      <div th:if="${attempts.isEmpty()}" style="padding:1.5rem;text-align:center;color:var(--text-muted)">No quiz attempts</div>
+      <div th:each="a : ${attempts}" style="display:flex;align-items:center;gap:1rem;padding:0.875rem 1.25rem;border-bottom:1px solid var(--border-light)">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:0.875rem" th:text="${a.quiz.title}">Quiz</div>
+          <div style="font-size:0.78rem;color:var(--text-muted)" th:text="${#temporals.format(a.createdAt,'dd MMM yyyy')}"></div>
+        </div>
+        <span class="badge"
+          th:style="${a.score >= a.totalMarks * 0.7} ? 'background:rgba(16,185,129,0.12);color:#10b981' : 'background:rgba(239,68,68,0.12);color:#ef4444'"
+          th:text="${a.score} + '/' + ${a.totalMarks}">-</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Enrolled Courses -->
+<div class="card" style="margin-top:1.5rem">
+  <div class="card-header"><h3 class="card-title">📚 Enrolled Courses</h3></div>
+  <div style="padding:0">
+    <div th:if="${enrollments.isEmpty()}" style="padding:1.5rem;text-align:center;color:var(--text-muted)">Not enrolled in any courses</div>
+    <div th:each="e : ${enrollments}" style="display:flex;align-items:center;gap:1rem;padding:0.875rem 1.25rem;border-bottom:1px solid var(--border-light)">
+      <div style="width:36px;height:36px;background:var(--primary-light);border-radius:10px;display:flex;align-items:center;justify-content:center">📘</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:0.875rem" th:text="${e.course.title}">Course</div>
+        <div style="font-size:0.78rem;color:var(--text-muted)">
+          <span th:if="${e.course.lecturer != null}" th:text="'Lecturer: ' + ${e.course.lecturer.fullName}"></span>
+          · <span th:text="'Enrolled: ' + ${#temporals.format(e.enrolledAt,'dd MMM yyyy')}"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</html>

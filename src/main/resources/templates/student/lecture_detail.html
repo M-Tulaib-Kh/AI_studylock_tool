@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Lecture</title>
+<main>
+<div style="max-width:900px;margin:0 auto">
+  <a href="javascript:history.back()" class="btn btn-outline btn-sm" style="margin-bottom:1.25rem">
+    <i class="ti ti-arrow-left"></i> Back
+  </a>
+
+  <!-- Header -->
+  <div class="card" style="margin-bottom:1.5rem;background:var(--primary-gradient);border:none;color:#fff">
+    <div class="card-body">
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem">
+        <span style="background:rgba(255,255,255,0.2);padding:2px 12px;border-radius:20px;font-size:0.8rem;font-weight:600" th:text="${lecture.subject}"></span>
+        <span style="background:rgba(255,255,255,0.2);padding:2px 12px;border-radius:20px;font-size:0.8rem"><i class="ti ti-eye"></i> <span th:text="${lecture.views}">0</span> views</span>
+        <span style="background:rgba(255,255,255,0.2);padding:2px 12px;border-radius:20px;font-size:0.8rem" th:text="${#temporals.format(lecture.createdAt,'dd MMM yyyy')}"></span>
+      </div>
+      <h2 style="font-size:1.5rem;font-weight:800;margin-bottom:0.5rem" th:text="${lecture.title}"></h2>
+      <p th:if="${lecture.description}" style="opacity:0.85;line-height:1.7" th:text="${lecture.description}"></p>
+    </div>
+  </div>
+
+  <!-- File Section — FIX: correct download with original name -->
+  <div class="card" th:if="${lecture.fileUrl != null and !lecture.fileUrl.isEmpty()}" style="margin-bottom:1.5rem">
+    <div class="card-header">
+      <h3 class="card-title">📄 Lecture File</h3>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-sm btn-outline" onclick="togglePdf()"><i class="ti ti-eye"></i> View</button>
+        <!-- FIX: download attribute with correct filename -->
+        <a th:href="@{${lecture.fileUrl}}"
+           th:attr="download=${lecture.fileName}"
+           class="btn btn-sm btn-primary"><i class="ti ti-download"></i> Download</a>
+      </div>
+    </div>
+    <div id="pdfArea" style="display:none;padding:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+        <div style="display:flex;gap:0.5rem">
+          <button onclick="prevPage()" class="btn btn-sm btn-outline"><i class="ti ti-chevron-left"></i></button>
+          <button onclick="nextPage()" class="btn btn-sm btn-outline"><i class="ti ti-chevron-right"></i></button>
+        </div>
+        <span id="pageInfo" style="color:var(--text-muted);font-size:0.85rem"></span>
+        <button onclick="togglePdf()" class="btn btn-sm btn-outline">✕ Close</button>
+      </div>
+      <canvas id="pdfCanvas" style="width:100%;border-radius:12px;background:#1a1a2e"></canvas>
+    </div>
+  </div>
+
+  <!-- AI Summarizer -->
+  <div class="card" style="margin-bottom:1.5rem;border:1.5px solid rgba(124,58,237,0.25);background:var(--primary-light)">
+    <div class="card-header">
+      <h3 class="card-title" style="color:var(--primary)">✨ AI Lecture Summary</h3>
+      <button class="btn btn-sm btn-primary" onclick="summarizeLecture()" id="sumBtn">
+        <i class="ti ti-sparkles"></i> Generate Summary
+      </button>
+    </div>
+    <div id="sumLoading" style="display:none;padding:1rem;text-align:center;color:var(--primary)">
+      <span class="ai-spinner"></span> AI is reading the lecture...
+    </div>
+    <div id="sumResult" style="display:none" class="card-body">
+      <div id="sumContent"></div>
+    </div>
+  </div>
+
+  <!-- Study tip -->
+  <div class="card" style="border:1px solid rgba(124,58,237,0.2);background:var(--primary-light)">
+    <div class="card-body" style="display:flex;align-items:center;gap:1rem">
+      <span style="font-size:1.75rem">💡</span>
+      <div>
+        <div style="font-weight:600;color:var(--primary)">Pro Tip</div>
+        <div style="color:var(--text-muted);font-size:0.875rem">Start a study session while reading to earn XP!</div>
+      </div>
+      <a th:href="@{/session/setup}" class="btn btn-primary btn-sm" style="margin-left:auto">Start Session</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script th:inline="javascript">
+const pdfUrl  = /*[[${lecture.fileUrl}]]*/ '';
+const lecId   = /*[[${lecture.id}]]*/ 0;
+let pdfDoc=null, pageNum=1, showing=false;
+
+function togglePdf(){
+  showing=!showing;
+  document.getElementById('pdfArea').style.display = showing ? 'block' : 'none';
+  if(showing && !pdfDoc && pdfUrl){
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfjsLib.getDocument(pdfUrl).promise.then(pdf=>{ pdfDoc=pdf; renderPage(1); })
+      .catch(()=>{ document.getElementById('pdfArea').innerHTML='<p style="padding:1rem;color:#ef4444">Could not load PDF. Please use the Download button.</p>'; });
+  }
+}
+function renderPage(n){
+  pdfDoc.getPage(n).then(page=>{
+    const canvas=document.getElementById('pdfCanvas'), vp=page.getViewport({scale:1.5});
+    canvas.height=vp.height; canvas.width=vp.width;
+    page.render({canvasContext:canvas.getContext('2d'),viewport:vp});
+    document.getElementById('pageInfo').textContent='Page '+n+' of '+pdfDoc.numPages;
+  });
+}
+function prevPage(){ if(pageNum>1){ pageNum--; renderPage(pageNum); } }
+function nextPage(){ if(pdfDoc && pageNum<pdfDoc.numPages){ pageNum++; renderPage(pageNum); } }
+
+async function summarizeLecture(){
+  document.getElementById('sumBtn').disabled=true;
+  document.getElementById('sumLoading').style.display='block';
+  document.getElementById('sumResult').style.display='none';
+  try {
+    const r = await fetch('/student/lecture/'+lecId+'/summarize', {method:'POST',
+      headers:{'Content-Type':'application/json', 'X-Requested-With':'XMLHttpRequest'}});
+    const d = await r.json();
+    if(d.success){
+      const data = JSON.parse(d.data);
+      let html = '';
+      if(data.summary) html += '<div style="margin-bottom:1rem"><h4 style="margin-bottom:0.5rem">📝 Summary</h4><p style="color:var(--text-muted);line-height:1.8">'+data.summary+'</p></div>';
+      if(data.keyPoints?.length){
+        html += '<div style="margin-bottom:1rem"><h4 style="margin-bottom:0.5rem">🔑 Key Points</h4><ul style="margin-left:1.25rem;color:var(--text-muted)">';
+        data.keyPoints.forEach(p=>html+='<li style="margin-bottom:4px">'+p+'</li>');
+        html += '</ul></div>';
+      }
+      if(data.concepts?.length){
+        html += '<div style="margin-bottom:1rem"><h4 style="margin-bottom:0.5rem">💡 Key Concepts</h4><div style="display:flex;flex-wrap:wrap;gap:0.5rem">';
+        data.concepts.forEach(c=>html+='<span style="background:var(--primary-light);color:var(--primary);padding:4px 12px;border-radius:20px;font-size:0.82rem;font-weight:600">'+c+'</span>');
+        html += '</div></div>';
+      }
+      if(data.studyTips?.length){
+        html += '<div><h4 style="margin-bottom:0.5rem">✅ Study Tips</h4><ul style="margin-left:1.25rem;color:var(--text-muted)">';
+        data.studyTips.forEach(t=>html+='<li style="margin-bottom:4px">'+t+'</li>');
+        html += '</ul></div>';
+      }
+      document.getElementById('sumContent').innerHTML = html;
+      document.getElementById('sumResult').style.display='block';
+    } else {
+      document.getElementById('sumContent').innerHTML='<p style="color:#ef4444">'+d.error+'</p>';
+      document.getElementById('sumResult').style.display='block';
+    }
+  } catch(e){
+    document.getElementById('sumContent').innerHTML='<p style="color:#ef4444">Error: '+e.message+'</p>';
+    document.getElementById('sumResult').style.display='block';
+  } finally {
+    document.getElementById('sumBtn').disabled=false;
+    document.getElementById('sumLoading').style.display='none';
+  }
+}
+</script>
+</main>
+</html>

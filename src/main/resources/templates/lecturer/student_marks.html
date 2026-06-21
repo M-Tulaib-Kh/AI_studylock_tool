@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Student Marks</title>
+<main>
+<div class="page-header">
+  <h1 class="page-title">📊 Student Marks</h1>
+  <p class="page-subtitle">View assignment and quiz scores per student</p>
+</div>
+
+<div class="card" style="margin-bottom:1.5rem">
+  <div class="card-body">
+    <form method="get" th:action="@{/lecturer/student-marks}" style="display:flex;gap:1rem;align-items:flex-end">
+      <div class="form-group" style="margin:0;flex:1">
+        <label class="form-label">Select Course</label>
+        <select name="courseId" class="form-control course-select">
+          <option value="">All my courses</option>
+          <option th:each="c : ${courses}" th:value="${c.id}" th:text="${c.title}"
+                  th:attr="data-meta=${c.subject + ' · Sem ' + c.semester + ' · ' + c.creditHours + ' credit hrs'}"
+                  th:selected="${c.id == selectedCourseId}">Course</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary"><i class="ti ti-search"></i> View Marks</button>
+    </form>
+  </div>
+</div>
+
+<div th:if="${students != null and !#lists.isEmpty(students)}" class="card">
+  <div class="card-header"><h3 class="card-title">Marks Overview</h3></div>
+  <div style="overflow-x:auto">
+    <table class="table" style="min-width:700px">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th th:each="a : ${assignments}" th:text="${a.title + ' (' + a.totalMarks + ')'}">Assignment</th>
+          <th th:each="q : ${quizzes}" th:text="${q.title + ' (' + q.totalMarks + ')'}">Quiz</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="row : ${students}">
+          <td>
+            <div style="font-weight:600" th:text="${row.student.fullName}"></div>
+            <div style="font-size:0.8rem;color:var(--text-muted)" th:text="${row.student.registrationNo ?: ''}"></div>
+          </td>
+          <td th:each="am : ${row.assignMarks}">
+            <span th:if="${am.marks == -1 and am.status == 'NOT_SUBMITTED'}" style="color:var(--text-muted);font-size:0.85rem">Not submitted</span>
+            <span th:if="${am.marks == -1 and am.status != 'NOT_SUBMITTED'}" style="color:#f59e0b;font-size:0.85rem">Pending grade</span>
+            <span th:if="${am.marks >= 0}" style="font-weight:600"
+                  th:style="${am.marks * 100 / am.total >= 50} ? 'color:#10b981' : 'color:#ef4444'"
+                  th:text="${am.marks + '/' + am.total}">0/0</span>
+          </td>
+          <td th:each="qm : ${row.quizMarks}">
+            <span th:if="${qm.status == 'NOT_ATTEMPTED'}" style="color:var(--text-muted);font-size:0.85rem">Not attempted</span>
+            <span th:if="${qm.status == 'ATTEMPTED'}" style="font-weight:600"
+                  th:style="${qm.marks * 100 / qm.total >= 50} ? 'color:#10b981' : 'color:#ef4444'"
+                  th:text="${qm.marks + '/' + qm.total}">0/0</span>
+          </td>
+          <td>
+            <span style="font-weight:700;color:var(--primary)">—</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div th:if="${students == null}" class="card">
+  <div class="card-body" style="text-align:center;padding:3rem;color:var(--text-muted)">
+    <div style="font-size:3rem">📊</div>
+    <p>Select a course above to view student marks.</p>
+  </div>
+</div>
+</main>
+</html>

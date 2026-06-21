@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Create Quiz</title>
+<main>
+<div style="max-width:800px;margin:0 auto">
+  <a href="javascript:history.back()" class="btn btn-outline btn-sm" style="margin-bottom:1.25rem"><i class="ti ti-arrow-left"></i> Back</a>
+
+  <!-- AI Generator -->
+  <div class="card" style="margin-bottom:1.5rem;border:2px solid rgba(124,58,237,0.3);background:var(--primary-light)">
+    <div class="card-body">
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem">
+        <span style="font-size:1.5rem">✨</span>
+        <div>
+          <div style="font-weight:800;color:var(--primary);font-size:1rem">AI Quiz Generator</div>
+          <div style="color:var(--text-muted);font-size:0.82rem">Generate MCQ questions automatically with AI</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Subject</label>
+          <input type="text" id="aiSubject" class="form-control" placeholder="e.g. Mathematics"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Topic / Prompt</label>
+          <input type="text" id="aiPrompt" class="form-control" placeholder="e.g. Quadratic equations"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Number of Questions (max 15)</label>
+          <input type="number" id="aiCount" class="form-control" value="5" min="1" max="15"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Duration (minutes)</label>
+          <input type="number" id="aiDuration" class="form-control" value="15" min="5"/>
+        </div>
+      </div>
+      <button type="button" class="btn btn-primary" onclick="generateQuiz()" id="genBtn">
+        <i class="ti ti-sparkles"></i> Generate with AI
+      </button>
+      <!-- FIX: show spinner + error state -->
+      <div id="genStatus" style="display:none;margin-top:0.75rem;color:var(--primary);font-size:0.875rem">
+        <span class="ai-spinner"></span> Generating questions — this may take 15-30 seconds...
+      </div>
+      <div id="genError" style="display:none;margin-top:0.75rem;padding:0.75rem;background:rgba(239,68,68,0.1);border-radius:8px;color:#dc2626;font-size:0.875rem"></div>
+      <div id="genResult" style="display:none;margin-top:0.75rem;padding:0.75rem;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);border-radius:8px;color:#065f46">
+        ✅ <span id="genCount">0</span> questions generated! Fill in the details below and submit.
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz Details Form -->
+  <div class="card">
+    <div class="card-header"><h3 class="card-title">❓ Quiz Details</h3></div>
+    <div class="card-body">
+      <form th:action="@{/lecturer/create/quiz}" method="post" enctype="multipart/form-data" id="quizForm">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" name="questionsJson" id="questionsJson" value="[]"/>
+        <input type="hidden" name="aiGenerated" id="aiGenField" value="false"/>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Course</label>
+            <select name="courseId" class="form-control course-select" required>
+              <option value="">Select course...</option>
+              <option th:each="c : ${courses}" th:value="${c.id}" th:text="${c.title}"
+                      th:attr="data-meta=${c.subject + ' · Sem ' + c.semester + ' · ' + c.creditHours + ' credit hrs'}">Course</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Subject</label>
+            <input type="text" name="subject" id="quizSubject" class="form-control" placeholder="Subject"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quiz Title</label>
+          <input type="text" name="title" id="quizTitle" class="form-control" placeholder="e.g. Chapter 1 Quiz" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" rows="2" placeholder="Quiz description..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Duration (minutes)</label>
+            <input type="number" name="durationMinutes" id="quizDuration" class="form-control" value="15" min="1" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Quiz Type</label>
+            <select id="quizType" class="form-control" onchange="toggleQuizType(this.value)">
+              <option value="mcq">MCQ (Multiple Choice)</option>
+              <option value="written">Written / File Upload</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- FIX: File upload for quiz (both MCQ file and written quiz file) -->
+        <div id="quizFileSection" class="form-group" style="display:none">
+          <label class="form-label">Quiz File (PDF, DOC, etc.)</label>
+          <div class="upload-zone" onclick="document.getElementById('quizFile').click()">
+            <div style="font-size:1.5rem;margin-bottom:0.25rem">📎</div>
+            <div style="color:var(--text-muted);font-size:0.875rem">Upload quiz file (students can view &amp; download)</div>
+            <div id="quizFileName" style="display:none;color:var(--primary);font-weight:600;margin-top:0.5rem"></div>
+          </div>
+          <input type="file" id="quizFile" name="quizFile" accept=".pdf,.doc,.docx,.zip"
+                 style="display:none"
+                 onchange="document.getElementById('quizFileName').textContent=this.files[0].name;document.getElementById('quizFileName').style.display='block'"/>
+        </div>
+
+        <button type="button" onclick="document.getElementById('quizFileSection').style.display='block'" class="btn btn-outline btn-sm" style="margin-bottom:1rem">
+          <i class="ti ti-paperclip"></i> Attach file to quiz (optional)
+        </button>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+          <i class="ti ti-check"></i> Create Quiz
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleQuizType(v){
+  document.getElementById('quizFileSection').style.display = v==='written' ? 'block' : 'none';
+  if(v==='written'){
+    document.getElementById('questionsJson').value='[]';
+  }
+}
+
+async function generateQuiz(){
+  const subj  = document.getElementById('aiSubject').value.trim();
+  const prompt= document.getElementById('aiPrompt').value.trim();
+  const count = parseInt(document.getElementById('aiCount').value)||5;
+  if(!subj||!prompt){ alert('Please enter both Subject and Topic/Prompt'); return; }
+
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  document.getElementById('genStatus').style.display  = 'block';
+  document.getElementById('genResult').style.display  = 'none';
+  document.getElementById('genError').style.display   = 'none';
+
+  try {
+    // FIX: use AbortController for proper timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(()=>controller.abort(), 90000); // 90s timeout
+
+    const r = await fetch('/lecturer/ai/generate-quiz', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({subject:subj, prompt:prompt, count:count}),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    const d = await r.json();
+    if(d.success && d.questionsJson){
+      const qs = JSON.parse(d.questionsJson);
+      document.getElementById('questionsJson').value  = d.questionsJson;
+      document.getElementById('quizTitle').value      = subj + ' — ' + prompt + ' Quiz';
+      document.getElementById('quizSubject').value    = subj;
+      document.getElementById('quizDuration').value   = document.getElementById('aiDuration').value;
+      document.getElementById('aiGenField').value     = 'true';
+      document.getElementById('genCount').textContent = qs.length;
+      document.getElementById('genResult').style.display = 'block';
+    } else {
+      document.getElementById('genError').textContent = '❌ ' + (d.error || 'Generation failed. Please try again.');
+      document.getElementById('genError').style.display = 'block';
+    }
+  } catch(e) {
+    let msg = e.name === 'AbortError' ? 'Request timed out. The AI is busy — please try again.' : 'Error: ' + e.message;
+    document.getElementById('genError').textContent = '❌ ' + msg;
+    document.getElementById('genError').style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    document.getElementById('genStatus').style.display = 'none';
+  }
+}
+</script>
+</main>
+</html>

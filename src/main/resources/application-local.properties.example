@@ -1,0 +1,24 @@
+# ═══════════════════════════════════════════════════
+#  StudyLock — LOCAL secrets template
+# ═══════════════════════════════════════════════════
+#
+# Copy this file to `application-local.properties` (same folder) and fill in
+# your real values there. `application-local.properties` is in .gitignore and
+# will NEVER be committed — only this `.example` file is tracked by git.
+#
+# Spring Boot automatically loads application-local.properties when you run
+# with the "local" profile active, e.g.:
+#   mvn spring-boot:run -Dspring-boot.run.profiles=local
+# or set the environment variable SPRING_PROFILES_ACTIVE=local
+#
+# Alternatively (no profile needed), just set these as real environment
+# variables before starting the app / before `docker compose up`:
+#   OPENROUTER_API_KEY, SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME,
+#   SPRING_DATASOURCE_PASSWORD
+# This is what docker-compose.yml already does.
+
+openrouter.api.key=sk-or-v1-PUT-YOUR-REAL-KEY-HERE
+
+spring.datasource.url=jdbc:mysql://localhost:3306/studylock_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+spring.datasource.username=root
+spring.datasource.password=

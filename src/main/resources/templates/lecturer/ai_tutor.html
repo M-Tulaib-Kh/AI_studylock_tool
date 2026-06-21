@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>AI Tutor — Lecturer</title>
+<main>
+
+<div class="page-header">
+  <h1 class="page-title">🤖 AI Teaching Assistant</h1>
+  <p class="page-subtitle">Generate content ideas, lesson plans, explanations, and more</p>
+</div>
+
+<div class="card" style="margin-bottom:1.5rem">
+  <div class="card-header" style="flex-wrap:wrap;gap:1rem">
+    <h3 class="card-title">💬 AI Assistant</h3>
+    <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
+      <select id="subjectSelect" class="form-control searchable-select" style="width:auto;min-width:220px">
+        <option value="General Teaching">🎓 General Teaching</option>
+        <option th:each="c : ${courses}" th:value="${c.title}" th:text="'📘 ' + ${c.title}"
+                th:attr="data-meta=${c.subject + ' · Sem ' + c.semester + ' · ' + c.creditHours + ' credit hrs'}">Course</option>
+        <option value="AI &amp; Machine Learning">🤖 AI &amp; Machine Learning</option>
+        <option value="Data Structures">📊 Data Structures</option>
+        <option value="Web Development">🌐 Web Development</option>
+        <option value="Assessment Design">📝 Assessment Design</option>
+      </select>
+      <button onclick="clearChat()" class="btn btn-outline btn-sm"><i class="ti ti-trash"></i> Clear</button>
+    </div>
+  </div>
+
+  <div id="chatMessages" style="min-height:380px;max-height:480px;overflow-y:auto;padding:1.25rem;display:flex;flex-direction:column;gap:1rem">
+    <div style="display:flex;gap:0.75rem;align-items:flex-start">
+      <div style="width:36px;height:36px;min-width:36px;background:var(--primary-gradient);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem">🤖</div>
+      <div style="background:var(--surface-2);border-radius:12px;border-top-left-radius:4px;padding:1rem;max-width:80%;line-height:1.6;color:var(--text)">
+        <strong>Hello! I'm your AI Teaching Assistant.</strong> 👋<br><br>
+        I can help you with:<br>
+        • 📝 Generating quiz questions and assignments<br>
+        • 📖 Creating lesson plans and outlines<br>
+        • 💡 Explaining complex concepts simply<br>
+        • 📊 Designing assessments and rubrics<br>
+        • 🔍 Reviewing topic coverage<br><br>
+        <em style="color:var(--text-muted);font-size:0.85rem">All responses are in English.</em>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:1rem 1.25rem;border-top:1px solid var(--border-light)">
+    <div style="display:flex;gap:0.75rem;align-items:flex-end">
+      <textarea id="userInput" class="form-control" placeholder="Ask anything — e.g., 'Create a 5-question quiz on binary trees', 'Explain merge sort for beginners'..."
+                style="min-height:56px;max-height:140px;resize:vertical;flex:1"
+                onkeydown="if(event.ctrlKey&&event.key==='Enter'){event.preventDefault();sendMessage();}"></textarea>
+      <button onclick="sendMessage()" id="sendBtn" class="btn btn-primary" style="min-width:56px;height:56px;padding:0;border-radius:14px">
+        <i class="ti ti-send" style="font-size:1.3rem"></i>
+      </button>
+    </div>
+    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.4rem">Ctrl+Enter to send</div>
+  </div>
+</div>
+
+<!-- Quick Prompts -->
+<div class="card">
+  <div class="card-header"><h3 class="card-title">⚡ Quick Prompts</h3></div>
+  <div class="card-body" style="display:flex;flex-wrap:wrap;gap:0.6rem">
+    <button class="btn btn-outline btn-sm" onclick="usePrompt('Generate 5 MCQ quiz questions on the selected subject topic')">📝 Generate Quiz</button>
+    <button class="btn btn-outline btn-sm" onclick="usePrompt('Create a detailed lesson plan outline for teaching this topic in 1 hour')">📖 Lesson Plan</button>
+    <button class="btn btn-outline btn-sm" onclick="usePrompt('What are the 10 most important concepts students should learn in this subject?')">🎯 Key Concepts</button>
+    <button class="btn btn-outline btn-sm" onclick="usePrompt('Create an assignment with clear rubric and grading criteria for this topic')">📋 Assignment Ideas</button>
+    <button class="btn btn-outline btn-sm" onclick="usePrompt('Explain this topic in simple terms that a first-year CS student can understand')">💡 Simple Explanation</button>
+    <button class="btn btn-outline btn-sm" onclick="usePrompt('What common mistakes do students make when learning this subject, and how to correct them?')">⚠️ Common Mistakes</button>
+  </div>
+</div>
+
+<style>
+.user-msg-wrap { display:flex; justify-content:flex-end; gap:0.75rem; align-items:flex-start; }
+.user-bubble { background:var(--primary-gradient);color:#fff;border-radius:12px;border-top-right-radius:4px;padding:0.875rem 1rem;max-width:75%;line-height:1.6;word-break:break-word; }
+.ai-bubble { background:var(--surface-2);border-radius:12px;border-top-left-radius:4px;padding:1rem;max-width:80%;line-height:1.7;color:var(--text);word-break:break-word; }
+.ai-bubble code { background:rgba(124,58,237,0.12);padding:1px 6px;border-radius:4px;font-family:monospace;font-size:0.88em; }
+.ai-bubble pre { background:var(--bg);padding:0.75rem;border-radius:8px;overflow-x:auto;border:1px solid var(--border-light);margin:0.5rem 0; }
+.typing-dot { width:7px;height:7px;background:var(--primary);border-radius:50%;animation:typingBounce 1.2s infinite; }
+.typing-dot:nth-child(2){animation-delay:.2s}.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes typingBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}
+</style>
+
+<script>
+let conversationHistory = [];
+
+function usePrompt(text) {
+  document.getElementById('userInput').value = text;
+  document.getElementById('userInput').focus();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const subject = document.getElementById('subjectSelect').value;
+  appendUserMessage(msg);
+  input.value = '';
+  const typingId = appendTyping();
+  document.getElementById('sendBtn').disabled = true;
+  try {
+    const res = await fetch('/lecturer/ai-tutor/ask', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRF-TOKEN':getCsrf()},
+      body: JSON.stringify({ subject, message: msg, history: conversationHistory })
+    });
+    const data = await res.json();
+    removeTyping(typingId);
+    if (data.success) {
+      appendAiMessage(data.answer);
+      conversationHistory.push({role:'user',content:msg});
+      conversationHistory.push({role:'assistant',content:data.answer});
+      if (conversationHistory.length > 20) conversationHistory = conversationHistory.slice(-20);
+    } else appendAiMessage('⚠️ ' + (data.error || 'AI unavailable.'));
+  } catch(e) {
+    removeTyping(typingId);
+    appendAiMessage('⚠️ Connection error.');
+  } finally { document.getElementById('sendBtn').disabled = false; }
+}
+
+function appendUserMessage(msg) {
+  const chat = document.getElementById('chatMessages');
+  const d = document.createElement('div');
+  d.className = 'user-msg-wrap';
+  d.innerHTML = `<div class="user-bubble">${esc(msg)}</div><div style="width:36px;height:36px;min-width:36px;background:var(--surface-2);border-radius:50%;display:flex;align-items:center;justify-content:center">👤</div>`;
+  chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+}
+
+function appendAiMessage(msg) {
+  const chat = document.getElementById('chatMessages');
+  const d = document.createElement('div');
+  d.style.cssText = 'display:flex;gap:0.75rem;align-items:flex-start';
+  d.innerHTML = `<div style="width:36px;height:36px;min-width:36px;background:var(--primary-gradient);border-radius:50%;display:flex;align-items:center;justify-content:center">🤖</div><div class="ai-bubble">${fmt(msg)}</div>`;
+  chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+}
+
+function appendTyping() {
+  const chat = document.getElementById('chatMessages');
+  const id = 'typing-'+Date.now();
+  const d = document.createElement('div');
+  d.id = id; d.style.cssText = 'display:flex;gap:0.75rem;align-items:flex-start';
+  d.innerHTML = `<div style="width:36px;height:36px;min-width:36px;background:var(--primary-gradient);border-radius:50%;display:flex;align-items:center;justify-content:center">🤖</div><div class="ai-bubble" style="display:flex;gap:5px;align-items:center"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+  chat.appendChild(d); chat.scrollTop = chat.scrollHeight; return id;
+}
+
+function removeTyping(id) { const e = document.getElementById(id); if(e) e.remove(); }
+
+function clearChat() {
+  conversationHistory = [];
+  document.getElementById('chatMessages').innerHTML = `<div style="display:flex;gap:0.75rem;align-items:flex-start"><div style="width:36px;height:36px;min-width:36px;background:var(--primary-gradient);border-radius:50%;display:flex;align-items:center;justify-content:center">🤖</div><div class="ai-bubble">Chat cleared. How can I assist your teaching today?</div></div>`;
+}
+
+function fmt(t) {
+  return t.replace(/```([^`]+)```/g,'<pre><code>$1</code></pre>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>').replace(/^/,'<p>').replace(/$/,'</p>');
+}
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function getCsrf() { const i = document.querySelector('input[name="_csrf"]'); return i ? i.value : ''; }
+</script>
+</main>
+</html>

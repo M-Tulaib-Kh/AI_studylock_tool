@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+
+<title>Home</title>
+
+<main>
+
+  <div class="page-header">
+    <h1 class="page-title" th:text="'Welcome back, ' + ${user.fullName.split(' ')[0]} + '! 👋'">
+      Welcome!
+    </h1>
+    <p class="page-subtitle">Here's your academic overview</p>
+  </div>
+
+  <!-- XP / Level Card -->
+  <div th:if="${gameState != null}" class="card"
+    style="margin-bottom:1.5rem;background:var(--primary-gradient);border:none;color:#fff">
+
+    <div class="card-body"
+      style="display:flex;align-items:center;justify-content:space-between;gap:1.5rem;flex-wrap:wrap">
+
+      <div>
+        <div style="font-size:0.85rem;opacity:0.85">
+          Level <span th:text="${gameState.level}">1</span>
+        </div>
+
+        <div style="font-size:2rem;font-weight:800" th:text="${gameState.points + ' XP'}">
+          0 XP
+        </div>
+
+        <div style="font-size:0.8rem;opacity:0.75" th:text="'🔥 ' + ${gameState.streak} + ' day streak'">
+          Streak
+        </div>
+      </div>
+
+      <div style="flex:1;max-width:340px">
+
+        <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:0.4rem;opacity:0.85">
+          <span>
+            Progress to Level <span th:text="${gameState.level + 1}">2</span>
+          </span>
+
+          <!-- FIXED: no (int) casting -->
+          <span th:text="${T(java.lang.Math).round(gameState.levelProgress * 100)} + '%'">
+            0%
+          </span>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.25);border-radius:999px;height:8px">
+
+          <div style="background:#fff;height:100%;border-radius:999px;transition:width 0.5s"
+            th:style="'width:' + ${T(java.lang.Math).round(gameState.levelProgress * 100)} + '%'">
+          </div>
+
+        </div>
+      </div>
+
+      <a th:href="@{/student/rewards}" class="btn"
+        style="background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.3)">
+        <i class="ti ti-trophy"></i> Rewards
+      </a>
+
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">⏱</div>
+      <div class="stat-info">
+        <div class="stat-number"
+          th:text="${(stats != null && stats.todaySeconds != null ? stats.todaySeconds : 0) / 60 + 'm'}">
+          0m
+        </div>
+        <div class="stat-label">Studied Today</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg,#10b981,#059669)">📋</div>
+      <div class="stat-info">
+        <div class="stat-number" th:text="${submissions != null ? submissions.size() : 0}">
+          0
+        </div>
+        <div class="stat-label">Submitted</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">📚</div>
+      <div class="stat-info">
+        <div class="stat-number" th:text="${lectures != null ? lectures.size() : 0}">
+          0
+        </div>
+        <div class="stat-label">Lectures</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Quick Links Row -->
+  <div class="grid-2" style="margin-top:1.25rem;gap:1rem">
+    <a th:href="@{/student/ai-tutor}" class="card"
+      style="display:flex;align-items:center;gap:1rem;padding:1rem 1.25rem;text-decoration:none;color:inherit;background:rgba(124,58,237,0.07);border:1.5px solid rgba(124,58,237,0.2);border-radius:var(--radius);transition:transform 0.2s"
+      onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+      <div style="width:44px;height:44px;background:var(--primary-gradient);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem">🤖</div>
+      <div>
+        <div style="font-weight:700;font-size:0.9rem">AI Study Tutor</div>
+        <div style="font-size:0.78rem;color:var(--text-muted)">Ask any academic question</div>
+      </div>
+    </a>
+    <a th:href="@{/student/topic-session}" class="card"
+      style="display:flex;align-items:center;gap:1rem;padding:1rem 1.25rem;text-decoration:none;color:inherit;background:rgba(16,185,129,0.07);border:1.5px solid rgba(16,185,129,0.2);border-radius:var(--radius);transition:transform 0.2s"
+      onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+      <div style="width:44px;height:44px;background:linear-gradient(135deg,#10b981,#059669);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem">⏱</div>
+      <div>
+        <div style="font-weight:700;font-size:0.9rem">Topic Study Session</div>
+        <div style="font-size:0.78rem;color:var(--text-muted)">Timer + topic completion tracker</div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Start Session CTA -->
+  <a th:href="@{/session/setup}" class="card"
+    style="margin-top:1.5rem;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;background:var(--primary-gradient);border:none;color:#fff;text-decoration:none;border-radius:var(--radius);transition:transform 0.2s"
+    onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+
+    <div style="display:flex;align-items:center;gap:1rem">
+
+      <div
+        style="width:48px;height:48px;background:rgba(255,255,255,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem">
+        ▶
+      </div>
+
+      <div>
+        <div style="font-weight:700;font-size:1rem">Start Study Session</div>
+        <div style="opacity:0.8;font-size:0.85rem">Earn XP, track streaks, focus timer</div>
+      </div>
+
+    </div>
+
+    <i class="ti ti-arrow-right" style="font-size:1.25rem"></i>
+  </a>
+
+  <!-- Recent Lectures + Assignments -->
+  <div class="grid-2" style="margin-top:1.5rem">
+
+    <!-- Lectures -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">📖 Recent Lectures</h3>
+        <a th:href="@{/student/academic(tab='lectures')}" class="btn btn-sm btn-outline">See all</a>
+      </div>
+
+      <div class="card-body" style="padding:0">
+
+        <div th:each="lec, lecStat : ${lectures}" th:if="${lecStat.index < 5}">
+
+          <a th:href="@{'/student/lecture/' + ${lec.id}}"
+            style="display:flex;align-items:center;gap:1rem;padding:0.85rem 1.25rem;border-bottom:1px solid var(--border-light);text-decoration:none;color:inherit;transition:background 0.15s"
+            onmouseover="this.style.background='var(--surface-2)'" onmouseout="this.style.background='transparent'">
+
+            <div
+              style="width:38px;height:38px;background:var(--primary-light);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--primary)">
+              📄
+            </div>
+
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:0.875rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                th:text="${lec.title}">
+              </div>
+              <div style="font-size:0.78rem;color:var(--text-muted)" th:text="${lec.subject}">
+              </div>
+            </div>
+
+            <i class="ti ti-chevron-right" style="color:var(--text-muted)"></i>
+          </a>
+
+        </div>
+
+        <div th:if="${lectures == null || lectures.isEmpty()}"
+          style="padding:2rem;text-align:center;color:var(--text-muted)">
+          No lectures yet
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Assignments -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">📝 Assignments</h3>
+        <a th:href="@{/student/academic(tab='assignments')}" class="btn btn-sm btn-outline">See all</a>
+      </div>
+
+      <div class="card-body" style="padding:0">
+
+        <div th:each="a, aStat : ${assignments}" th:if="${aStat.index < 5}">
+
+          <a th:href="@{'/student/assignment/' + ${a.id}}"
+            style="display:flex;align-items:center;gap:1rem;padding:0.85rem 1.25rem;border-bottom:1px solid var(--border-light);text-decoration:none;color:inherit;transition:background 0.15s"
+            onmouseover="this.style.background='var(--surface-2)'" onmouseout="this.style.background='transparent'">
+
+            <div
+              style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center"
+              th:style="${a.overdue} ? 'background:#fee2e2' : 'background:#fef3c7'">
+              <span th:text="${a.overdue} ? '⚠' : '📋'"></span>
+            </div>
+
+            <div style="flex:1;min-width:0">
+
+              <div style="font-weight:600;font-size:0.875rem" th:text="${a.title}">
+              </div>
+
+              <div style="font-size:0.78rem" th:style="${a.overdue} ? 'color:#ef4444' : 'color:var(--text-muted)'"
+                th:text="${a.overdue} ? 'Overdue!' : 'Due: ' + ${#temporals.format(a.deadline,'dd MMM')}">
+              </div>
+
+            </div>
+
+            <i class="ti ti-chevron-right" style="color:var(--text-muted)"></i>
+
+          </a>
+
+        </div>
+
+        <div th:if="${assignments == null || assignments.isEmpty()}"
+          style="padding:2rem;text-align:center;color:var(--text-muted)">
+          No assignments yet
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+</html>

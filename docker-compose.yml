@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: studylock-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: studylock_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - studylock_db_data:/var/lib/mysql
+      - ./database/studylock_db.sql:/docker-entrypoint-initdb.d/01-studylock_db.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: studylock-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/studylock_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+    volumes:
+      - studylock_uploads:/app/uploads
+
+volumes:
+  studylock_db_data:
+  studylock_uploads:

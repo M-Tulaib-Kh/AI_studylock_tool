@@ -1,0 +1,263 @@
+@startuml StudyLock_ClassDiagram
+title StudyLock LMS — Class Diagram (v4.2)
+
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+skinparam classBackgroundColor #F8FBFF
+skinparam classBorderColor #2E75B6
+skinparam classHeaderBackgroundColor #2E75B6
+skinparam classHeaderFontColor #FFFFFF
+skinparam arrowColor #555555
+skinparam packageBackgroundColor #EEF4FF
+skinparam packageBorderColor #2E75B6
+skinparam noteFontSize 9
+
+' ── Enums ──────────────────────────────────
+enum UserRole {
+  STUDENT
+  LECTURER
+  ADMIN
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  LATE
+  GRADED
+}
+
+enum SessionStatus {
+  ACTIVE
+  COMPLETED
+  FAILED
+}
+
+enum EnrollmentRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum EnrollmentRequestReason {
+  FUTURE_SEMESTER
+  CREDIT_LIMIT_EXCEEDED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+' ── Core Domain Classes ───────────────────
+class User {
+  - Long id
+  - String email
+  - String password
+  - String fullName
+  - UserRole role
+  - String department
+  - String registrationNo
+  - String designation
+  - Integer semester
+  - String avatarUrl
+  - boolean active
+  - LocalDateTime createdAt
+}
+
+class Course {
+  - Long id
+  - String title
+  - String description
+  - String subject
+  - Integer creditHours
+  - Integer semester
+  - LocalDateTime createdAt
+}
+
+class Enrollment {
+  - Long id
+  - LocalDateTime enrolledAt
+  - boolean completed
+}
+
+class EnrollmentRequest {
+  - Long id
+  - EnrollmentRequestStatus status
+  - EnrollmentRequestReason reason
+  - Integer studentSemester
+  - Integer courseSemester
+  - Integer currentCreditHours
+  - Integer requestedCourseCreditHours
+  - String adminNote
+  - LocalDateTime requestedAt
+  - LocalDateTime decidedAt
+}
+
+class Assignment {
+  - Long id
+  - String title
+  - String subject
+  - String description
+  - String instructions
+  - String fileUrl
+  - String fileName
+  - LocalDateTime deadline
+  - int totalMarks
+  - boolean aiGenerated
+  - LocalDateTime createdAt
+}
+
+class Submission {
+  - Long id
+  - String fileUrl
+  - String fileName
+  - LocalDateTime submittedAt
+  - SubmissionStatus status
+  - Integer marksObtained
+  - String feedback
+  - LocalDateTime gradedAt
+}
+
+class Quiz {
+  - Long id
+  - String title
+  - String subject
+  - String description
+  - String questionsJson
+  - int durationMinutes
+  - int totalMarks
+  - LocalDateTime deadline
+  - boolean aiGenerated
+  - LocalDateTime createdAt
+}
+
+class QuizAttempt {
+  - Long id
+  - String answersJson
+  - int score
+  - int totalMarks
+  - String aiFeedback
+  - boolean aiEvaluated
+  - LocalDateTime createdAt
+}
+
+class Lecture {
+  - Long id
+  - String title
+  - String subject
+  - String description
+  - String fileUrl
+  - String fileName
+  - int views
+  - LocalDateTime createdAt
+}
+
+class StudySession {
+  - Long id
+  - int plannedDurationSeconds
+  - int elapsedSeconds
+  - SessionStatus status
+  - int violations
+  - boolean cameraEnabled
+  - boolean validSession
+  - String blockedApps
+  - LocalDateTime startedAt
+  - LocalDateTime endedAt
+}
+
+class GameState {
+  - Long userId
+  - int points
+  - int streak
+  - int longestStreak
+  - String badgesJson
+  - String challengesJson
+  - LocalDateTime updatedAt
+}
+
+class Notification {
+  - Long id
+  - String title
+  - String message
+  - String type
+  - boolean read
+  - LocalDateTime createdAt
+}
+
+class Attendance {
+  - Long id
+  - AttendanceStatus status
+  - String notes
+  - LocalDateTime createdAt
+}
+
+class StudyPlan {
+  - Long id
+  - String title
+  - String planJson
+  - String subject
+  - int durationWeeks
+  - LocalDateTime createdAt
+}
+
+class LoginEvent {
+  - Long id
+  - UserRole role
+  - String email
+  - String name
+  - String deviceInfo
+  - LocalDateTime loggedInAt
+}
+
+class TopicProgress {
+  - Long id
+  - String topicName
+  - boolean completed
+  - LocalDateTime completedAt
+  - int timeSpentSeconds
+}
+
+' ── Relationships ─────────────────────────
+User "1" -- "0..*" Enrollment : enrolls >
+Course "1" -- "0..*" Enrollment : < has enrollments
+
+User "1" -- "0..*" EnrollmentRequest : requests >
+Course "1" -- "0..*" EnrollmentRequest : < requested for
+User "0..1" -- "0..*" EnrollmentRequest : decides >
+
+User "0..1" -- "0..*" Course : teaches >
+Course "1" -- "0..*" Assignment : contains >
+User "1" -- "0..*" Submission : submits >
+Assignment "1" -- "0..*" Submission : < receives
+
+Course "1" -- "0..*" Quiz : contains >
+User "1" -- "0..*" QuizAttempt : attempts >
+Quiz "1" -- "0..*" QuizAttempt : < has attempts
+
+Course "1" -- "0..*" Lecture : contains >
+
+User "1" -- "0..*" StudySession : runs >
+Enrollment "1" -- "0..*" StudySession : < for enrollment
+
+User "1" -- "1" GameState : has >
+
+User "1" -- "0..*" Notification : receives >
+
+User "1" -- "0..*" Attendance : recorded for >
+Course "1" -- "0..*" Attendance : < in course
+
+User "1" -- "0..*" StudyPlan : creates >
+User "1" -- "0..*" LoginEvent : generates >
+
+Enrollment "1" -- "0..*" TopicProgress : tracks >
+
+' ── Enum usages ───────────────────────────
+User ..> UserRole
+Submission ..> SubmissionStatus
+StudySession ..> SessionStatus
+EnrollmentRequest ..> EnrollmentRequestStatus
+EnrollmentRequest ..> EnrollmentRequestReason
+Attendance ..> AttendanceStatus
+LoginEvent ..> UserRole
+
+@enduml

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Manage Content</title>
+<main>
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem">
+  <div>
+    <h1 class="page-title">📁 Manage Content</h1>
+    <p class="page-subtitle">Lectures, assignments, quizzes and submissions</p>
+  </div>
+  <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+    <a th:href="@{/lecturer/create/lecture}" class="btn btn-outline btn-sm"><i class="ti ti-upload"></i> Upload Lecture</a>
+    <a th:href="@{/lecturer/create/assignment}" class="btn btn-outline btn-sm"><i class="ti ti-clipboard"></i> New Assignment</a>
+    <a th:href="@{/lecturer/create/quiz}" class="btn btn-primary btn-sm"><i class="ti ti-plus"></i> New Quiz</a>
+  </div>
+</div>
+
+<div class="tabs">
+  <a th:href="@{/lecturer/manage(tab='lectures')}" class="tab-btn" th:classappend="${tab=='lectures' or tab==null} ? 'active' : ''">
+    📖 Lectures (<span th:text="${lectures.size()}">0</span>)</a>
+  <a th:href="@{/lecturer/manage(tab='assignments')}" class="tab-btn" th:classappend="${tab=='assignments'} ? 'active' : ''">
+    📝 Assignments (<span th:text="${assignments.size()}">0</span>)</a>
+  <a th:href="@{/lecturer/manage(tab='quizzes')}" class="tab-btn" th:classappend="${tab=='quizzes'} ? 'active' : ''">
+    ❓ Quizzes (<span th:text="${quizzes.size()}">0</span>)</a>
+  <a th:href="@{/lecturer/manage(tab='submissions')}" class="tab-btn" th:classappend="${tab=='submissions'} ? 'active' : ''">
+    📨 Submissions (<span th:text="${submissions.size()}">0</span>)</a>
+</div>
+
+<!-- Lectures -->
+<div th:if="${tab=='lectures' or tab==null}" class="card">
+  <div style="overflow-x:auto">
+    <table class="table">
+      <thead><tr><th>Title</th><th>Subject</th><th>Course</th><th>Views</th><th>Actions</th></tr></thead>
+      <tbody>
+        <tr th:each="l : ${lectures}">
+          <td style="font-weight:600" th:text="${l.title}"></td>
+          <td th:text="${l.subject}"></td>
+          <td th:text="${l.course != null ? l.course.title : '—'}"></td>
+          <td><span class="badge badge-gray" th:text="${l.views} + ' views'"></span></td>
+          <td>
+            <div style="display:flex;gap:0.4rem">
+              <a th:if="${l.fileUrl != null and !l.fileUrl.isEmpty()}"
+                 th:href="@{${l.fileUrl}}" th:attr="download=${l.fileName}"
+                 class="btn btn-sm btn-outline"><i class="ti ti-download"></i></a>
+              <form method="post" th:action="@{'/lecturer/lecture/' + ${l.id} + '/delete'}" style="display:inline" onsubmit="return confirm('Delete lecture?')">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button class="btn btn-sm btn-danger"><i class="ti ti-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <tr th:if="${lectures.isEmpty()}"><td colspan="5" style="text-align:center;padding:2rem;color:var(--text-muted)">No lectures yet</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Assignments -->
+<div th:if="${tab=='assignments'}" class="card">
+  <div style="overflow-x:auto">
+    <table class="table">
+      <thead><tr><th>Title</th><th>Subject</th><th>File</th><th>Deadline</th><th>Marks</th><th>Actions</th></tr></thead>
+      <tbody>
+        <tr th:each="a : ${assignments}">
+          <td>
+            <div style="font-weight:600" th:text="${a.title}"></div>
+            <span th:if="${a.aiGenerated}" class="badge badge-purple" style="font-size:0.7rem">AI</span>
+          </td>
+          <td th:text="${a.subject}"></td>
+          <td>
+            <div th:if="${a.fileUrl != null and !a.fileUrl.isEmpty()}" style="display:flex;gap:0.4rem">
+              <a th:href="@{${a.fileUrl}}" th:attr="download=${a.fileName}" class="btn-download btn-sm">
+                <i class="ti ti-download"></i> Download
+              </a>
+            </div>
+            <span th:if="${a.fileUrl == null or a.fileUrl.isEmpty()}" style="color:var(--text-muted);font-size:0.8rem">—</span>
+          </td>
+          <td style="font-size:0.85rem" th:text="${#temporals.format(a.deadline,'dd MMM yyyy')}"></td>
+          <td th:text="${a.totalMarks}"></td>
+          <td>
+            <form method="post" th:action="@{'/lecturer/assignment/' + ${a.id} + '/delete'}" style="display:inline" onsubmit="return confirm('Delete assignment?')">
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <button class="btn btn-sm btn-danger"><i class="ti ti-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        <tr th:if="${assignments.isEmpty()}"><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">No assignments yet</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Quizzes -->
+<div th:if="${tab=='quizzes'}" class="card">
+  <div style="overflow-x:auto">
+    <table class="table">
+      <thead><tr><th>Title</th><th>Subject</th><th>Duration</th><th>Marks</th><th>File</th><th>Actions</th></tr></thead>
+      <tbody>
+        <tr th:each="q : ${quizzes}">
+          <td>
+            <div style="font-weight:600" th:text="${q.title}"></div>
+            <span th:if="${q.aiGenerated}" class="badge badge-purple" style="font-size:0.7rem">AI</span>
+          </td>
+          <td th:text="${q.subject}"></td>
+          <td th:text="${q.durationMinutes} + ' min'"></td>
+          <td th:text="${q.totalMarks}"></td>
+          <td>
+            <a th:if="${q.fileUrl != null and !q.fileUrl.isEmpty()}"
+               th:href="@{${q.fileUrl}}" th:attr="download=${q.fileName}" class="btn-download btn-sm">
+              <i class="ti ti-download"></i>
+            </a>
+            <span th:if="${q.fileUrl == null or q.fileUrl.isEmpty()}" style="color:var(--text-muted)">—</span>
+          </td>
+          <td>
+            <form method="post" th:action="@{'/lecturer/quiz/' + ${q.id} + '/delete'}" style="display:inline" onsubmit="return confirm('Delete quiz?')">
+              <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <button class="btn btn-sm btn-danger"><i class="ti ti-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        <tr th:if="${quizzes.isEmpty()}"><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">No quizzes yet</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Submissions -->
+<div th:if="${tab=='submissions'}" class="card">
+  <div style="overflow-x:auto">
+    <table class="table">
+      <thead><tr><th>Student</th><th>Assignment</th><th>Submitted</th><th>File</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr th:each="s : ${submissions}">
+          <td style="font-weight:600" th:text="${s.student.fullName}"></td>
+          <td th:text="${s.assignment.title}"></td>
+          <td style="font-size:0.82rem" th:text="${#temporals.format(s.submittedAt,'dd MMM HH:mm')}"></td>
+          <td>
+            <div th:if="${s.fileUrl != null and !s.fileUrl.isEmpty()}" style="display:flex;gap:0.4rem">
+              <a th:href="@{${s.fileUrl}}" th:attr="download=${s.fileName}" class="btn-download btn-sm">
+                <i class="ti ti-download"></i> Download
+              </a>
+            </div>
+          </td>
+          <td>
+            <span th:if="${s.status.name()=='GRADED'}"   class="badge badge-green">✓ Graded</span>
+            <span th:if="${s.status.name()=='LATE'}"     class="badge badge-red">Late</span>
+            <span th:if="${s.status.name()=='SUBMITTED'}" class="badge badge-amber">Pending</span>
+          </td>
+          <td>
+            <a th:href="@{'/lecturer/grade/' + ${s.id}}" class="btn btn-sm btn-primary"><i class="ti ti-edit"></i> Grade</a>
+          </td>
+        </tr>
+        <tr th:if="${submissions.isEmpty()}"><td colspan="6" style="text-align:center;padding:2rem;color:var(--text-muted)">No submissions yet</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</main>
+</html>

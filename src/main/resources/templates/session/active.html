@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Study Session — StudyLock</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/tabler-icons.min.css" rel="stylesheet"/>
+</head>
+<body style="background:#060E1A;margin:0;padding:0;min-height:100vh;font-family:'Inter',sans-serif">
+
+<div style="max-width:680px;margin:0 auto;padding:2rem;display:flex;flex-direction:column;align-items:center;min-height:100vh;justify-content:center;gap:2rem">
+
+  <!-- Focus Badge -->
+  <div style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);padding:6px 18px;border-radius:20px;color:#10B981;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px">
+    <span style="width:8px;height:8px;background:#10B981;border-radius:50%;display:inline-block;animation:pulse 2s infinite"></span>
+    FOCUS MODE ACTIVE
+  </div>
+
+  <!-- Circular Timer -->
+  <div style="position:relative;width:280px;height:280px">
+    <svg width="280" height="280" style="transform:rotate(-90deg)">
+      <circle cx="140" cy="140" r="126" fill="none" stroke="#122540" stroke-width="12"/>
+      <circle id="timerArc" cx="140" cy="140" r="126" fill="none" stroke="url(#grad)" stroke-width="12"
+              stroke-linecap="round" stroke-dasharray="792" stroke-dashoffset="792"/>
+      <defs>
+        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#7c3aed"/>
+          <stop offset="100%" style="stop-color:#3b82f6"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+      <div id="timerDisplay" style="color:#fff;font-size:52px;font-weight:800;letter-spacing:-2px;font-variant-numeric:tabular-nums">00:00</div>
+      <div style="color:#7B8DB0;font-size:13px;margin-top:4px">remaining</div>
+      <div id="pctDisplay" style="background:rgba(124,58,237,0.15);color:#a78bfa;padding:3px 14px;border-radius:20px;font-size:12px;font-weight:600;margin-top:8px">0% complete</div>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;width:100%;max-width:400px">
+    <div style="background:#0d1e32;border:1px solid #1a2e47;border-radius:14px;padding:1rem;text-align:center">
+      <div style="color:#7B8DB0;font-size:12px;margin-bottom:4px">Elapsed</div>
+      <div id="elapsedDisplay" style="color:#fff;font-size:1.5rem;font-weight:700">0m</div>
+    </div>
+    <div style="background:#0d1e32;border:1px solid #1a2e47;border-radius:14px;padding:1rem;text-align:center">
+      <div style="color:#7B8DB0;font-size:12px;margin-bottom:4px">Duration</div>
+      <div id="totalDisplay" style="color:#fff;font-size:1.5rem;font-weight:700">0m</div>
+    </div>
+  </div>
+
+  <!-- Tab-switch warning -->
+  <div id="warningBanner" style="display:none;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);border-radius:12px;padding:1rem;width:100%;max-width:400px;text-align:center">
+    <div style="color:#F59E0B;font-weight:600"><i class="ti ti-alert-triangle"></i> Tab Switch Detected</div>
+    <div style="color:rgba(255,255,255,0.5);font-size:12px;margin-top:4px">Return to this tab to keep focusing</div>
+  </div>
+
+  <!-- End Button -->
+  <button onclick="confirmEnd()" style="width:100%;max-width:400px;padding:14px;background:rgba(239,68,68,0.08);border:1.5px solid rgba(239,68,68,0.4);border-radius:16px;color:#EF4444;font-size:15px;font-weight:600;cursor:pointer">
+    <i class="ti ti-player-stop"></i> End Session
+  </button>
+</div>
+
+<!-- Confirm End Modal -->
+<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;z-index:100">
+  <div style="background:#0D1E32;border:1px solid #1A2E47;border-radius:20px;padding:28px;max-width:360px;width:90%">
+    <h3 style="color:#fff;margin:0 0 10px">End Session?</h3>
+    <p style="color:#7B8DB0;font-size:14px;margin:0 0 22px">Ending early marks this as failed. No XP earned.</p>
+    <div style="display:flex;gap:10px">
+      <button onclick="document.getElementById('confirmModal').style.display='none'"
+              style="flex:1;padding:12px;background:transparent;border:1px solid #1A2E47;border-radius:12px;color:#E8EDFF;cursor:pointer">Keep Going</button>
+      <button onclick="endSession('failed')"
+              style="flex:1;padding:12px;background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);border-radius:12px;color:#EF4444;cursor:pointer;font-weight:600">End</button>
+    </div>
+  </div>
+</div>
+
+<style>@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}</style>
+<script th:inline="javascript">
+const planned    = /*[[${session.plannedDurationSeconds}]]*/ 1800;
+let elapsed      = /*[[${session.elapsedSeconds}]]*/ 0;
+let sessionEnded = false;
+const circ       = 792;
+
+document.getElementById('totalDisplay').textContent = Math.round(planned/60) + 'm';
+
+function updateDisplay() {
+  const rem = Math.max(0, planned - elapsed);
+  const m = Math.floor(rem/60), s = rem%60;
+  document.getElementById('timerDisplay').textContent = String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  document.getElementById('elapsedDisplay').textContent = Math.floor(elapsed/60)+'m';
+  const pct = Math.min(elapsed/planned, 1);
+  document.getElementById('timerArc').style.strokeDashoffset = circ*(1-pct);
+  document.getElementById('pctDisplay').textContent = Math.round(pct*100)+'% complete';
+  if (rem <= 0 && !sessionEnded) endSession('completed');
+}
+
+const ticker = setInterval(() => {
+  if (sessionEnded) return;
+  elapsed++;
+  updateDisplay();
+  if (elapsed % 30 === 0) syncElapsed();
+}, 1000);
+
+async function syncElapsed() {
+  await fetch('/session/api/elapsed', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({elapsed})
+  }).catch(()=>{});
+}
+
+// Tab switch warning (no violations, just informational)
+let monitorActive = false;
+setTimeout(() => { monitorActive = true; }, 2000);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && monitorActive && !sessionEnded) {
+    document.getElementById('warningBanner').style.display = 'block';
+  } else {
+    document.getElementById('warningBanner').style.display = 'none';
+  }
+});
+
+function confirmEnd() { document.getElementById('confirmModal').style.display = 'flex'; }
+
+async function endSession(status) {
+  if (sessionEnded) return;
+  sessionEnded = true;
+  clearInterval(ticker);
+  document.getElementById('confirmModal').style.display = 'none';
+  const r = await fetch('/session/api/end', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({status, elapsed})
+  }).catch(()=>null);
+  const d = r ? await r.json().catch(()=>({})) : {};
+  window.location.href = '/session/result?status='+status+'&duration='+elapsed+'&violations=0&xp='+(d.xpEarned||0);
+}
+
+updateDisplay();
+</script>
+</body></html>

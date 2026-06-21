@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{shared/layout :: layout(~{::title}, ~{::main})}">
+<title>Quiz Result</title>
+<main>
+<div style="max-width:600px;margin:0 auto">
+  <div th:with="pct=${attempt.totalMarks > 0 ? attempt.score * 100 / attempt.totalMarks : 0}">
+    <div style="text-align:center;margin-bottom:2rem">
+      <div style="font-size:5rem" th:text="${pct >= 50} ? '🎉' : '📚'"></div>
+      <h1 class="page-title" th:text="${pct >= 50} ? 'Well Done!' : 'Keep Practicing'"></h1>
+      <p class="page-subtitle" th:text="${quiz.title}"></p>
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:1.5rem">
+      <div class="stat-card" style="flex-direction:column;text-align:center;gap:0.25rem">
+        <div style="font-size:2rem;font-weight:800"
+             th:style="${pct>=50}?'color:#10b981':'color:#ef4444'"
+             th:text="${attempt.score} + '/' + ${attempt.totalMarks}"></div>
+        <div class="stat-label">Score</div>
+      </div>
+      <div class="stat-card" style="flex-direction:column;text-align:center;gap:0.25rem">
+        <div style="font-size:2rem;font-weight:800;color:var(--primary)" th:text="${pct} + '%'"></div>
+        <div class="stat-label">Percentage</div>
+      </div>
+      <div class="stat-card" style="flex-direction:column;text-align:center;gap:0.25rem">
+        <div style="font-size:2rem;font-weight:800" th:text="${attempt.grade}"></div>
+        <div class="stat-label">Grade</div>
+      </div>
+    </div>
+
+    <div th:if="${attempt.aiFeedback}" class="card" style="margin-bottom:1.5rem;border-left:4px solid var(--primary)">
+      <div class="card-body">
+        <h4 style="margin-bottom:0.5rem">✨ AI Feedback</h4>
+        <p style="color:var(--text-muted);line-height:1.7" th:text="${attempt.aiFeedback}"></p>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:1rem">
+      <a th:href="@{/student/academic(tab='quizzes')}" class="btn btn-primary" style="flex:1;justify-content:center">Back to Quizzes</a>
+      <a th:href="@{/student/home}" class="btn btn-outline" style="flex:1;justify-content:center">Dashboard</a>
+    </div>
+  </div>
+</div>
+</main>
+</html>

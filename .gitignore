@@ -1,0 +1,49 @@
+# ── Secrets — NEVER commit these ────────────────────
+.env
+.env.*
+!.env.example
+application-local.properties
+application-secrets.properties
+*.pem
+*.key
+*credentials*.json
+
+# ── Maven build output ──────────────────────────────
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# ── Compiled class files ────────────────────────────
+*.class
+
+# ── Logs ─────────────────────────────────────────────
+*.log
+logs/
+
+# ── Uploaded user files ──────────────────────────────
+uploads/*
+!uploads/.gitkeep
+
+# ── IDE files ────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+bin/
+
+# ── OS files ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Spring Boot DevTools ─────────────────────────────
+.~lock.*
+
+# ── Docker ───────────────────────────────────────────
+docker-compose.override.yml
+
+# ── Test / coverage output ──────────────────────────
+*.exec
+hs_err_pid*
